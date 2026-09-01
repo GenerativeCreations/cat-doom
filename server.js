@@ -3,7 +3,8 @@
 const http = require('http'), fs = require('fs'), path = require('path');
 const ROOT = __dirname, PORT = Number(process.env.PORT) || 5347;
 // Loopback only when run by hand; a platform that injects PORT (Railway) gets all interfaces.
-const HOST = process.env.HOST || (process.env.PORT ? '0.0.0.0' : '127.0.0.1');
+const ON_PLATFORM = !!(process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_ENVIRONMENT_NAME);
+const HOST = process.env.HOST || (ON_PLATFORM ? '0.0.0.0' : '127.0.0.1');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json' };
 const SERVE_EXT = new Set(Object.keys(MIME));                               // only these file types are ever served
 const DENY = /(^|\/)(server\.js|package\.json|railway\.json|README\.md|tools|levels\/\.|\.[^/]*)(\/|$)/; // dev files and dotfiles
@@ -32,5 +33,5 @@ const server = http.createServer((req, res) => {
   });
 });
 server.headersTimeout = 15000; server.requestTimeout = 15000; server.keepAliveTimeout = 5000; server.maxHeadersCount = 50;
-server.listen(PORT, HOST, () => console.log('CatDoom on http://' + HOST + ':' + PORT));
+server.listen(PORT, HOST, () => console.log('CatDoom listening on http://' + HOST + ':' + PORT + (ON_PLATFORM ? ' (platform)' : ' (local, loopback)')));
 process.on('SIGTERM', () => server.close(() => process.exit(0)));
