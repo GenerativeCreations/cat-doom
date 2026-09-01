@@ -1,0 +1,37 @@
+// Level 8 — The Attic. Rafters cut the floor into 1-wide staircase corridors; zoomies ricochet down them.
+// A perimeter crawl loops the whole map, the chimney is the only landmark, and the Chonk owns the exit room.
+CatDoom.registerLevel({
+  n: 8,
+  name: 'The Attic',
+  subtitle: 'Insulation, boxes of photographs, and something very fast.',
+  theme: { walls: ['wood', 'wallpaper', 'stone'], border: 'wood', sky: '#1d1610', floor: '#3b2d1f', fog: 0.3 },
+  start: { dir: 'E' },
+  rows: [
+    '##########################',
+    '#.........t..............#',
+    '#.S.....@..@..@.....@.t@.#',
+    '#.....@..@..@.....@..@...#',
+    '#......@..@z....@.....@.t#',
+    '#.@..@..@.....@.....@..@.#',
+    '#..@z.@.....@..@v....@...#',
+    '#...@.....@..@..@..@..@..#',
+    '#t@.....@..@..@..@..@z.@.#',
+    '#.....@v.@..===@..@..@...#',
+    '#...@..@..@W===.@..@.....#',
+    '#.@..@..@..@===..@.....@.#',
+    '#.z@..@..@..@..@.....@.z.#',
+    '#......@z.@..@.....@..@.W#',
+    '#.@.....@..@.....@.v@..@.#',
+    '#..@.....@...z.@..@..@...#',
+    '#t..@..@.....@..@..@######',
+    '#.@..@v....@..@.z@..#....#',
+    '#W.@.....@..@..@..@...c..E',
+    '#......@..@..@..@.T@#....#',
+    '#............t.......#####',
+    '##########################',
+  ],
+  triggers: [
+    { when: 'pickup', x: 18, y: 19, spawn: [{ x: 12, y: 20, type: 'z' }, { x: 8, y: 20, type: 'z' }], say: 'SOMETHING RICOCHETS OFF THE RAFTERS BEHIND YOU' },
+  ],
+  awake: [[22, 18]],
+});

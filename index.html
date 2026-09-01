@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>CatDoom</title>
+<style>
+  :root { --bg:#0b0708; --panel:#1a1012; --edge:#4a2a2e; --hot:#ff5a2b; --hp:#e33; --water:#3ab0ff; --text:#f3e6d8; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:"Courier New",Courier,monospace; overflow:hidden; overscroll-behavior:none; }
+  #app { height:100%; display:flex; flex-direction:column; }
+  #hud { display:flex; align-items:center; gap:12px; padding:6px 10px; background:var(--panel); border-bottom:3px solid var(--edge); font-weight:bold; font-size:14px; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+  #hud .stat { display:flex; align-items:center; gap:6px; }
+  #hud .bar { width:110px; height:12px; background:#2a1a1c; border:2px solid var(--edge); position:relative; }
+  #hud .bar i { display:block; height:100%; width:100%; background:var(--hp); transition:width .12s; }
+  #hud #waterbar i { background:var(--water); }
+  #hud .num { min-width:34px; text-align:right; }
+  #hud .spacer { flex:1; }
+  #hud button { background:#2a1a1c; color:var(--text); border:2px solid var(--edge); font-family:inherit; font-weight:bold; padding:4px 8px; cursor:pointer; }
+  #hud button.on { background:var(--hot); color:#000; }
+  #stage { flex:1; position:relative; display:flex; align-items:center; justify-content:center; min-height:0; background:#000; touch-action:none; }
+  canvas#view { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; image-rendering:crisp-edges; display:block; }
+  #msg { position:absolute; left:0; right:0; top:8px; text-align:center; font-weight:bold; font-size:16px; text-shadow:0 2px 0 #000; pointer-events:none; opacity:0; transition:opacity .3s; letter-spacing:1px; }
+  #msg.show { opacity:1; }
+  #overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(8,4,5,.86); text-align:center; padding:20px; }
+  #overlay[hidden] { display:none; }
+  #overlay h1 { font-size:clamp(40px,9vw,84px); margin:0; color:var(--hot); text-shadow:4px 4px 0 #5a1a00, 0 0 24px #ff5a2b88; letter-spacing:4px; }
+  #overlay h2 { margin:0; font-size:clamp(18px,3vw,26px); }
+  #overlay p { max-width:520px; margin:0; line-height:1.5; opacity:.9; }
+  #promo { font-size:12px; opacity:.75; margin-top:10px; letter-spacing:1px; } #promo a { color:var(--hot); }
+  #overlay button { font-family:inherit; font-size:22px; font-weight:bold; padding:14px 34px; background:var(--hot); color:#000; border:0; border-bottom:6px solid #8a2a00; cursor:pointer; letter-spacing:2px; }
+  #overlay button:active { transform:translateY(3px); border-bottom-width:3px; }
+  #tools { display:flex; gap:8px; justify-content:center; padding:6px 10px; background:#140c0e; border-top:2px solid var(--edge); user-select:none; touch-action:none; }
+  #tools[hidden] { display:none; }
+  .tool { position:relative; min-width:86px; height:48px; border:2px solid var(--edge); border-bottom-width:5px; border-radius:8px; background:#2c1c1f; color:var(--text); font-family:inherit; font-weight:bold; font-size:11px; letter-spacing:1px; display:flex; align-items:center; gap:6px; padding:0 10px; cursor:pointer; touch-action:none; }
+  .tool .ico { font-size:20px; } .tool .cnt { margin-left:auto; font-size:16px; color:#ffd166; } .tool .key { position:absolute; top:-8px; right:-6px; background:var(--edge); color:var(--text); font-size:9px; padding:1px 4px; border-radius:4px; }
+  .tool.empty { opacity:.45; } .tool.pressed, .tool:active { background:var(--hot); color:#000; border-bottom-width:2px; transform:translateY(3px); }
+  .tool[hidden] { display:none; }
+  #controls { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:var(--panel); border-top:3px solid var(--edge); gap:10px; user-select:none; touch-action:none; }
+  .pad { display:grid; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(2,64px); gap:6px; justify-content:center; }
+  .pad.left { justify-self:start; }
+  .pad.right { justify-self:end; grid-template-columns:repeat(2,64px) 96px; }
+  .btn { width:64px; height:64px; border:3px solid var(--edge); border-bottom-width:7px; background:#2c1c1f; color:var(--text); font-size:28px; font-weight:bold; font-family:inherit; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
+  .btn.pressed, .btn:active { background:var(--hot); color:#000; border-bottom-width:3px; transform:translateY(4px); }
+  .btn.fire { width:96px; height:134px; grid-row:1 / span 2; background:#7a1f12; font-size:18px; letter-spacing:1px; flex-direction:column; line-height:1.1; }
+  .btn.fire small { font-size:11px; opacity:.85; letter-spacing:0; }
+  .btn.wide { width:64px; }
+  .fwd { grid-column:2; grid-row:1; } .sl { grid-column:1; grid-row:2; } .back { grid-column:2; grid-row:2; } .sr { grid-column:3; grid-row:2; }
+  .tl { grid-column:1; grid-row:1; } .tr { grid-column:2; grid-row:1; }
+  .tl2 { grid-column:1; grid-row:2; } .tr2 { grid-column:2; grid-row:2; }
+  .tl2, .tr2 { font-size:14px; }
+  #center { text-align:center; font-size:12px; opacity:.7; line-height:1.5; letter-spacing:1px; }
+  @media (max-width:640px) { #hud { gap:8px; padding:4px 8px; } #hud .stat { gap:4px; } #hud button { padding:3px 6px; font-size:11px; } .pad { grid-template-columns:repeat(3,54px); grid-template-rows:repeat(2,54px); } .pad.right { grid-template-columns:repeat(2,54px) 80px; } .btn { width:54px; height:54px; font-size:22px; } .btn.fire { width:80px; height:114px; font-size:15px; } #center { display:none; } #hud { font-size:12px; } #hud .bar { width:70px; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="stat">HP <div class="bar" id="hpbar"><i></i></div><span class="num" id="hpnum">100</span></div>
+    <div class="stat">Water <div class="bar" id="waterbar"><i></i></div><span class="num" id="waternum">60</span></div>
+    <div class="stat">Cats napping <span id="cats">0/0</span></div>
+    <div class="stat">Level <span id="level">1</span></div>
+    <div class="spacer"></div>
+    <button id="mapbtn" title="toggle minimap">MAP</button>
+    <button id="mutebtn" title="toggle sound">SOUND</button>
+  </div>
+  <div id="stage">
+    <canvas id="view" width="320" height="200"></canvas>
+    <div id="msg"></div>
+    <div id="overlay">
+      <h1>CATDOOM</h1>
+      <h2 id="ovsub">The house has been overrun. Only the spray bottle remains.</h2>
+      <p id="ovtext">Move with the pad on the left. Turn and SPRAY with the pad on the right. Every cat you spritz goes down for a nap. Nap them all and the EXIT door opens to the next room. Twelve rooms, each with a new and worse cat, ending with the cat goddess herself. Drink water bowls to refill, eat tuna to heal. From room two on you find new tools: catnip, yarn balls, plastic bags, and a cardboard box. Number keys 1 to 4 use them. Keyboard also works: WASD / arrows, Q/E turn, Space sprays.</p>
+      <button id="startbtn">START</button>
+    <p id="promo"></p>
+    </div>
+  </div>
+  <div id="tools" hidden></div>
+  <div id="controls">
+    <div class="pad left">
+      <button class="btn fwd" data-act="fwd" aria-label="forward">▲</button>
+      <button class="btn sl" data-act="sl" aria-label="strafe left">◀</button>
+      <button class="btn back" data-act="back" aria-label="back">▼</button>
+      <button class="btn sr" data-act="sr" aria-label="strafe right">▶</button>
+    </div>
+    <div id="center">MOVE ◀ ▲ ▼ ▶<br>TURN ⟲ ⟳ &nbsp; SPRAY<br>drag the view to look</div>
+    <div class="pad right">
+      <button class="btn tl" data-act="tl" aria-label="turn left">⟲</button>
+      <button class="btn tr" data-act="tr" aria-label="turn right">⟳</button>
+      <button class="btn tl2" data-act="tl" aria-label="turn left">TURN L</button>
+      <button class="btn tr2" data-act="tr" aria-label="turn right">TURN R</button>
+      <button class="btn fire" data-act="fire" aria-label="spray">SPRAY<small>💦</small></button>
+    </div>
+  </div>
+</div>
+<script src="promo.js"></script>
+<script src="parse.js"></script>
+<script src="engine.js"></script>
+<script src="levels/level01.js"></script>
+<script src="levels/level02.js"></script>
+<script src="levels/level03.js"></script>
+<script src="levels/level04.js"></script>
+<script src="levels/level05.js"></script>
+<script src="levels/level06.js"></script>
+<script src="levels/level07.js"></script>
+<script src="levels/level08.js"></script>
+<script src="levels/level09.js"></script>
+<script src="levels/level10.js"></script>
+<script src="levels/level11.js"></script>
+<script src="levels/level12.js"></script>
+</body>
+</html>

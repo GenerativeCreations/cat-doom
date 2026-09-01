@@ -1,0 +1,11 @@
+{
+  "name": "catdoom",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Doom, but the demons are cats. Browser raycaster with on-screen controls, twelve levels, a spray bottle and a toolbelt.",
+  "scripts": {
+    "start": "node server.js",
+    "validate": "node tools/validate-levels.js"
+  },
+  "engines": { "node": ">=18" }
+}

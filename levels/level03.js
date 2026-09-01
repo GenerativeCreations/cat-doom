@@ -1,0 +1,40 @@
+// Level 3 — The Laundry Room. Introduces the tuxedo. Four banks of machines with 1-wide aisles
+// between them; every aisle row is open end to end so a tuxedo can be circled instead of shoved past.
+CatDoom.registerLevel({
+  n: 3,
+  name: 'The Laundry Room',
+  subtitle: 'The dryer is still warm. Nothing has been washed in weeks.',
+  theme: { walls: ['wallpaper', 'metal', 'wood'], border: 'wood', sky: '#4a3524', floor: '#5d4632', fog: 0.15 },
+  start: { dir: 'E' },
+  rows: [
+    '######################',
+    '#S...t...............#',
+    '#.............t......#',
+    '#................v...#',
+    '#.@@.@@.@@.@@.@@.@@..#',
+    '#.@@.@@.@@.@@.@@.@@t.#',
+    '#.........x........W.#',
+    '#..@@.@@..@@.@@.@@...#',
+    '#..@@.@@..@@.@@.@@...#',
+    '#v..................v#',
+    '#.@@.@@..==.@@.@@.@@.#',
+    '#.@@.@@..==.@@.@@.@@.#',
+    '#.W..........x.......#',
+    '#..@@.@@.@@..@@.@@...#',
+    '#..@@.@@.@@..@@.@@...#',
+    '#...x..v...........T.#',
+    '####.##########.######',
+    '#..t..........t......#',
+    '#..@@@@....@@@@......#',
+    '#....T...t.W..t...t..#',
+    '#....................#',
+    '##################E###',
+  ],
+  triggers: [
+    {
+      when: 'pickup', x: 19, y: 15,
+      spawn: [{ x: 16, y: 12, type: 'v' }],
+      say: 'SOMETHING MOVED IN THE DRYER',
+    },
+  ],
+});
