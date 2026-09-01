@@ -1,13 +1,13 @@
 // Zero-dependency static server for CatDoom (Railway / any Node host). `node server.js` → http://localhost:PORT
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path');
-const ROOT = __dirname, PORT = Number(process.env.PORT) || 5347;
+const ROOT = path.join(__dirname, 'public'), PORT = Number(process.env.PORT) || 5347;
 // Loopback only when run by hand; a platform that injects PORT (Railway) gets all interfaces.
 const ON_PLATFORM = !!(process.env.PORT || process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_ENVIRONMENT_NAME);
 const HOST = process.env.HOST || (ON_PLATFORM ? '0.0.0.0' : '127.0.0.1');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json' };
 const SERVE_EXT = new Set(Object.keys(MIME));                               // only these file types are ever served
-const DENY = /(^|\/)(server\.js|package\.json|railway\.json|README\.md|tools|levels\/\.|\.[^/]*)(\/|$)/; // dev files and dotfiles
+const DENY = /(^|\/)(_headers|_redirects|\.[^/]*)(\/|$)/;   // Cloudflare config files and dotfiles never leave the box
 const SECURITY = {
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
   'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',

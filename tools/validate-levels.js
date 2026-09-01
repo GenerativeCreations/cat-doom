@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Validates every demos/catdoom/levels/levelNN.js headlessly. Usage: node tools/validate-levels.js [N ...]
+// Validates every public/levels/levelNN.js headlessly. Usage: node tools/validate-levels.js [N ...]
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const P = require(path.join(__dirname, '..', 'parse.js'));
-const dir = path.join(__dirname, '..', 'levels');
+const P = require(path.join(__dirname, '..', 'public', 'parse.js'));
+const dir = path.join(__dirname, '..', 'public', 'levels');
 const only = process.argv.slice(2).map(Number).filter(Boolean);
 const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => /^level\d\d\.js$/.test(f)).sort() : [];
 let failed = 0, seen = new Set();

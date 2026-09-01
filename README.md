@@ -12,28 +12,41 @@ twelve hand-authored levels, a spray bottle, and a toolbelt that grows every lev
 ## Play locally
 
 ```bash
-node server.js          # → http://localhost:5347   (or: python3 -m http.server 5347)
+node server.js          # → http://localhost:5347 (serves ./public, loopback only)
 ```
 
 Deep-link to a level for testing: `http://localhost:5347/?level=7`.
 
-## Deploy to Railway
+## Deploy
 
-The folder is a self-contained Node app with no dependencies.
+The game is static: everything that ships lives in **`public/`** (`_headers` and `_redirects` carry the
+security headers and the www → apex redirect).
 
-1. Push this folder (or the repo with `demos/catdoom` as the service root) to GitHub.
-2. Railway → New Project → Deploy from GitHub → set **Root Directory** to `demos/catdoom`.
-3. Railway detects `package.json`, runs `node server.js`, and injects `PORT`. Done.
+**Cloudflare (production, cat-doom.com).** Workers & Pages → Create → connect `GenerativeCreations/cat-doom`,
+no build command, output directory `public`. `wrangler.jsonc` is included so `npx wrangler deploy` works too.
+Attach the custom domain in the project's settings; the zone is already on Cloudflare.
 
-Edit the newsletter / stream plug on the title screen in `index.html` (`window.CATDOOM_PROMO`).
+**Railway (fallback, or when a backend arrives).** `server.js` serves `public/` with the same headers and a
+`/healthz` endpoint; `railway.json` configures the healthcheck. Set root directory to the repo root.
+
+Edit the newsletter / stream plug on the title screen in `public/promo.js`.
+
+## Security notes
+
+`server.js` serves only `.html/.js/.css/.png/.ico/.txt` files from `public/`, refuses dotfiles and the
+Cloudflare config files, and sends a strict Content-Security-Policy (no inline scripts, no outbound
+connections). `_headers` sends the same policy on Cloudflare. The game makes no network requests, sets no
+cookies, and stores nothing. Debug hooks on `window.CatDoom.cheat` exist for testing; there is no
+leaderboard, so they affect only your own session.
 
 ## Files
 
-- `index.html` — shell: HUD, on-screen controls, tool row, title/game-over overlay.
-- `engine.js` — raycaster, cats, tools, triggers, level flow.
-- `parse.js` — level legend parser shared by the engine and the validator.
-- `levels/levelNN.js` — one data file per level (see [docs/DESIGN.md](docs/DESIGN.md) for the design and schema).
+- `public/index.html` — shell: HUD, on-screen controls, tool row, title/game-over overlay.
+- `public/engine.js` — raycaster, cats, tools, triggers, level flow.
+- `public/parse.js` — level legend parser shared by the engine and the validator.
+- `public/levels/levelNN.js` — one data file per level (see [docs/DESIGN.md](docs/DESIGN.md) for the design and schema).
 - `tools/validate-levels.js` — `node tools/validate-levels.js [N ...]` checks every level headlessly.
+- `server.js`, `railway.json`, `wrangler.jsonc` — hosting.
 
 ## Controls
 
