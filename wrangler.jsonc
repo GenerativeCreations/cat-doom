@@ -4,7 +4,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cat-doom",
   "compatibility_date": "2026-09-01",
-  "assets": { "directory": "./public", "not_found_handling": "404-page" },
+  "main": "worker.js",
+  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "404-page" },
   "routes": [
     { "pattern": "cat-doom.com", "custom_domain": true },
     { "pattern": "www.cat-doom.com", "custom_domain": true }
