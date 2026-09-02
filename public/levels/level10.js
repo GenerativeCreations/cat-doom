@@ -1,12 +1,16 @@
 // Level 10 — The Cat Tree. A 14x14 carpeted arena with the tree in the middle and four alcoves of water.
 // Four waves: the six tabbies on the floor are wave one; `kills` triggers at 6, 14 and 24 open the rest.
 // Every wave from the second on carries wailers — leave one alive and the next wave lands on top of you.
+// Doom systems: two hidey-holes (a scratched panel in the west wall by the start, another in the east wall
+// mid-arena) each hiding a bowl or tuna; three litter boxes planted two tiles inside the north, south and
+// east wave lanes, so a well-timed spray thins a wave as it walks in.
 CatDoom.registerLevel({
   n: 10,
   name: 'The Cat Tree',
   subtitle: 'Sixty pounds of carpeted plywood, and everything that lives on it.',
   theme: { walls: ['wood', 'wallpaper', 'brick'], border: 'wood', sky: '#241a1e', floor: '#5b2f36', fog: 0.2 },
   start: { dir: 'N' },
+  par: 260,   // 45 + 9x6 placed cats + 6x26 wave cats, rounded
   rows: [
     '########################',
     '#####=====######E#######',
@@ -15,16 +19,16 @@ CatDoom.registerLevel({
     '#####=...=#####...######',
     '#####..............#####',
     '#====....t.......T.#####',
-    '#=............t....#####',
+    '#=.........!..t....?$T##',
     '#=.W.............@.#####',
     '#=.......@..T.@....#####',
     '#====...........t..#####',
     '#####.@....@@......====#',
-    '#####......@@.........=#',
-    '#####...t...........W.=#',
+    '#####......@@...!.....=#',
+    '##W$?...t...........W.=#',
     '#####....@....@..t....=#',
     '#####..............====#',
-    '#####.......t......#####',
+    '#####......!t......#####',
     '#####.S............#####',
     '#####..............#####',
     '##############=...=#####',

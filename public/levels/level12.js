@@ -1,16 +1,20 @@
 // Level 12 — The Shrine of Bastet. Final boss. An octagonal arena: eight gilded pillars to break her
 // line of sight, four bone alcoves holding the only water in the room, four gates onto a ring corridor
 // that runs the whole way around. Her congregation sleeps in that ring. The last door is at the back.
+// Doom systems: two niches in the outer ring (north-east bowl, south-west tuna) far from where Bastet's
+// faithful materialise beside her; three litter boxes in the gaps of her orbit, where her own hairballs will
+// set them off — the blast hurts her summons and turns them on her.
 CatDoom.registerLevel({
   n: 12,
   name: 'The Shrine of Bastet',
   subtitle: 'Nine lives, one door, and a bottle that was never going to be enough.',
   theme: { walls: ['brick', 'bone', 'gold'], border: 'brick', sky: '#1b1206', floor: '#4a3510', fog: 0.4 },
   start: { dir: 'S' },
+  par: 300,   // 45 + 9x15 placed cats + 120 for Bastet
   rows: [
     '############################',
-    '#............S.............#',
-    '#..........................#',
+    '#............S..........#$W#',
+    '#.......................#?##',
     '#........####..####........#',
     '#.......#..........#.......#',
     '#......#............#......#',
@@ -18,12 +22,12 @@ CatDoom.registerLevel({
     '#....#.......==.......#....#',
     '#...#@W..............W@#...#',
     '#..#.....==......==.....#..#',
-    '#s.#.....==......==.....#.s#',
+    '#s.#.....==..!...==.....#.s#',
     '#..#....................#..#',
     '#..#....................#..#',
     '#T....==.....B......==....T#',
     '#.....==............==.....#',
-    '#..#....................#..#',
+    '#..#......!.....!.......#..#',
     '#..#....................#..#',
     '#..#.....==......==.....#..#',
     '#..#.....==......==.....#..#',
@@ -33,8 +37,8 @@ CatDoom.registerLevel({
     '#......G............G......#',
     '#.......#..........#.......#',
     '#........####..####........#',
-    '#...g..................g...#',
-    '#.......z..c.T..c..z.......#',
+    '##?#g..................g...#',
+    '#T$#....z..c.T..c..z.......#',
     '#############E##############',
   ],
   triggers: [

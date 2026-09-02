@@ -154,7 +154,11 @@ CatDoom.registerLevel({
 
 **Map legend.** `#` wall A · `@` wall B · `=` wall C (indices into `theme.walls`) · `.` floor · `S` start
 (exactly one) · `E` exit (exactly one; a wall cell with at least one floor neighbour) · `W` water bowl ·
-`T` tuna · cat letters `t v x k c h s z g w M B` (spawns at that floor cell) · `G` = a ghost embedded in a wall cell (the cell stays wall A) · anything else is an error. Facing direction at start is auto (first open neighbour) or
+`T` tuna · `N Y P O` catnip/yarn/bag/box ammo · cat letters `t v x k c h s z g w M B` (spawns at that floor cell) · `G` = a ghost embedded in a wall cell (the cell stays wall A) ·
+`?` hidey-hole wall (looks like wall A with a claw scratch, yields when walked into) · `$` secret floor (counts once; must only be reachable through a `?`) ·
+`L` locked cat-flap door (needs the tag; exactly one `K` per level that has doors) · `K` collar tag pickup (must be reachable with the door shut) ·
+`!` full litter box (solid; 40 HP; explodes: 70 to cats and 15 to you within 2.2 tiles, chain-reacts; never within 3 tiles of `S`) · anything else is an error.
+**Level fields:** `par: <seconds>` (default ≈ 45 + 9 per cat + 6 per trigger-spawned cat), `difficulty: { dmg, speed }`. Facing direction at start is auto (first open neighbour) or
 `start: { dir: 'E' | 'W' | 'N' | 'S' }`.
 
 **Textures available:** `brick`, `stone`, `wood`, `tile`, `wallpaper`, `metal`, `bone`, `gold`.

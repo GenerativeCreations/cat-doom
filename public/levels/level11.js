@@ -1,12 +1,17 @@
 // Level 11 — The Litter Box Cathedral. Boss level: the Matriarch holds the nave and never stops
 // calling kittens. Two side aisles run the length of the room and loop behind the apse to the exit,
 // so the player always has somewhere to run — as long as they get past her guard.
+// Doom systems: buttress hidey-holes in both aisles at the level of the hurlers (water west, tuna east) —
+// the lifeline for the Matriarch fight; litter boxes under both aisle guards and one on the altar approach;
+// a cat flap (L) in the apse screen with the tag (K) at the east end of the ambulatory, so the exit costs a
+// full lap past the guard.
 CatDoom.registerLevel({
   n: 11,
   name: 'The Litter Box Cathedral',
   subtitle: 'She has been sitting in that sand since before you were born.',
   theme: { walls: ['stone', 'bone', 'tile'], border: 'stone', sky: '#161b24', floor: '#3a3f49', fog: 0.35 },
   start: { dir: 'S' },
+  par: 260,   // 45 + 9x16 placed cats + 6x1 trigger cat + 60 for the Matriarch, rounded
   rows: [
     '############################',
     '#..........................#',
@@ -20,19 +25,19 @@ CatDoom.registerLevel({
     '#.....@@............@@.....#',
     '#.....@@............@@.....#',
     '#..v....................v..#',
-    '#..........................#',
-    '#.....@@............@@.....#',
-    '#.....@@............@@.....#',
+    '####....................####',
+    '#W$?..@@............@@..?$T#',
+    '####..@@............@@..####',
     '#.h......................h.#',
-    '#.......................W..#',
+    '#.!.....................W!.#',
     '#.....@@.==......==.@@.....#',
     '#.....@@.==......==.@@.....#',
     '#...v........M.........v...#',
-    '#............T.............#',
+    '#..........!.T.............#',
     '#.w.........====.........w.#',
     '#.....################.....#',
-    '#......x.....W......x......#',
-    '#...v.....h......h.........#',
+    '#......x....LW#.....x....K.#',
+    '#...v.....h.#.#..h.........#',
     '#############E##############',
   ],
   triggers: [

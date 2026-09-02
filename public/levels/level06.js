@@ -2,32 +2,35 @@
 // 20-tile sightlines; the concrete "cars" alternate top/bottom every ~4 tiles so the only
 // way down a bay is a weave, and each weave is a piece of hairball cover. Water is out
 // in the open lanes on purpose.
+// Doom systems: hidey-holes inside the bay-1 and bay-3 cars (tuna, yarn); litter boxes parked in the
+// bay-2, bay-3 and bay-4 firing lines, each within a hairball of a hurler's own friends.
 CatDoom.registerLevel({
   n: 6,
   name: 'The Garage',
   subtitle: 'Something in the third bay is clearing its throat.',
+  par: 195,
   theme: { walls: ['metal', 'stone', 'wood'], border: 'metal', sky: '#20242a', floor: '#3a3d42', fog: 0.25 },
   start: { dir: 'E' },
   rows: [
     '##########################',
-    '#S..@@@...........@@@....#',
-    '#...@@@.....W.....@@@....#',
-    '#........@@@...@@@.....h.#',
+    '#S..@@@@..........@@@....#',
+    '#...@$T@....W.....@@@....#',
+    '#...@?@@.@@@...@@@.....h.#',
     '#........@@@.v.@@@.......#',
     '#=..========x.========..=#',
     '#......@@@.........@@@..h#',
     '#...v..@@@.........@@@...#',
-    '#.........W..@@@.........#',
+    '#.........W..@@@..!......#',
     '#............@@@..v......#',
     '#=..=====x.===========..=#',
     '#..........@@@.@@@.....h.#',
-    '#.h.....v..@@@.@@@..T....#',
-    '#...@@@.W.........@@@....#',
-    '#...@@@........v..@@@....#',
+    '#.h.@?@@v!.@@@.@@@..T....#',
+    '#...@$Y@W.........@@@....#',
+    '#...@@@@.......v..@@@....#',
     '#=======..=====x.=====..=#',
     '#....@@............@@....#',
     '#..v.@@.....h......@@.h..E',
-    '#........................#',
+    '#...............!........#',
     '##########################',
   ],
   triggers: [

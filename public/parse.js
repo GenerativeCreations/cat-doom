@@ -7,7 +7,7 @@
   const CAT_NAMES = new Set(Object.values(CAT_LETTERS));
   const WALL_CHARS = { '#': 1, '@': 2, '=': 3 };
   const AMMO_CHARS = { N: 'catnip', Y: 'yarn', P: 'bag', O: 'box' };   // tool ammo pickups (engine auto-places them if a level has none)
-  const EXIT_ID = 4, BORDER_ID = 5;
+  const EXIT_ID = 4, BORDER_ID = 5, DOOR_ID = 6, SECRET_WALL_ID = 7;   // 6 = locked cat-flap door (opens with the collar tag), 7 = hidey-hole wall (looks solid, yields)
   const TEXTURES = ['brick', 'stone', 'wood', 'tile', 'wallpaper', 'metal', 'bone', 'gold'];
 
   function catType(t) { if (CAT_LETTERS[t]) return CAT_LETTERS[t]; if (CAT_NAMES.has(t)) return t; return null; }
@@ -19,12 +19,14 @@
     if (MH < 5 || MW < 5) errors.push('map too small (need at least 5x5)');
     rows.forEach((r, y) => { if (typeof r !== 'string' || r.length !== MW) errors.push('row ' + y + ' has length ' + (r && r.length) + ', expected ' + MW); });
     const map = new Uint8Array(Math.max(0, MW * MH));
-    let start = null, exit = null; const cats = [], pickups = [];
+    let start = null, exit = null; const cats = [], pickups = [], secrets = [], barrels = [], doors = [];
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
       const ch = (rows[y] || '')[x], i = y * MW + x, border = x === 0 || y === 0 || x === MW - 1 || y === MH - 1;
       if (ch === undefined) continue;
       if (ch === 'E') { if (exit) errors.push('duplicate E at (' + x + ',' + y + ')'); exit = [x, y]; map[i] = EXIT_ID; continue; }
       if (WALL_CHARS[ch]) { map[i] = border ? BORDER_ID : WALL_CHARS[ch]; continue; }
+      if (ch === 'L') { if (border) errors.push('L door on the border at (' + x + ',' + y + ')'); map[i] = DOOR_ID; doors.push([x, y]); continue; }
+      if (ch === '?') { if (border) errors.push('? secret wall on the border at (' + x + ',' + y + ')'); map[i] = SECRET_WALL_ID; continue; }
       if (ch === 'G') { map[i] = border ? BORDER_ID : 1; cats.push({ x: x + 0.5, y: y + 0.5, type: 'ghost', inWall: true }); continue; }
       if (border) { errors.push("border cell (" + x + ',' + y + ") is '" + ch + "', must be a wall"); continue; }
       if (ch === '.') continue;
@@ -32,9 +34,16 @@
       if (ch === 'W') { pickups.push({ x: x + 0.5, y: y + 0.5, kind: 'water' }); continue; }
       if (ch === 'T') { pickups.push({ x: x + 0.5, y: y + 0.5, kind: 'tuna' }); continue; }
       if (AMMO_CHARS[ch]) { pickups.push({ x: x + 0.5, y: y + 0.5, kind: AMMO_CHARS[ch] }); continue; }
+      if (ch === '$') { secrets.push([x, y]); continue; }
+      if (ch === 'K') { pickups.push({ x: x + 0.5, y: y + 0.5, kind: 'key' }); continue; }
+      if (ch === '!') { barrels.push({ x: x + 0.5, y: y + 0.5 }); continue; }
       if (CAT_LETTERS[ch]) { cats.push({ x: x + 0.5, y: y + 0.5, type: CAT_LETTERS[ch] }); continue; }
       errors.push("bad char '" + ch + "' at (" + x + ',' + y + ')');
     }
+    const keys = pickups.filter(k => k.kind === 'key').length;
+    if (doors.length && keys !== 1) errors.push('level has ' + doors.length + ' L door(s) but ' + keys + ' K collar tag(s); needs exactly one K');
+    if (keys && !doors.length) errors.push('K collar tag without any L door');
+    if (def.par !== undefined && !(def.par > 0)) errors.push('par must be a positive number of seconds');
     if (!start) errors.push('missing S (start)');
     if (!exit) errors.push('missing E (exit)');
     const wallAt = (x, y) => (x < 0 || y < 0 || x >= MW || y >= MH) ? BORDER_ID : map[(y | 0) * MW + (x | 0)];
@@ -68,11 +77,12 @@
     const awake = (def.awake || []).map(([x, y]) => x + ',' + y);
     const difficulty = Object.assign({ dmg: 1, speed: 1 }, def.difficulty || {});
     if (!(difficulty.dmg > 0 && difficulty.dmg <= 2) || !(difficulty.speed > 0 && difficulty.speed <= 2)) errors.push('difficulty.dmg / difficulty.speed must be in (0, 2]');
-    return { n: def.n, name: def.name || ('Level ' + def.n), subtitle: def.subtitle || '', MW, MH, map, start, exit, cats, pickups, triggers, awake, theme, difficulty, dir: (def.start && def.start.dir) || null, errors, wallAt };
+    return { n: def.n, name: def.name || ('Level ' + def.n), subtitle: def.subtitle || '', MW, MH, map, start, exit, cats, pickups, secrets, barrels, doors, par: def.par || null, triggers, awake, theme, difficulty, dir: (def.start && def.start.dir) || null, errors, wallAt };
   }
 
   // BFS over floor cells from start. Returns the set of reachable "x,y" keys; the exit is reachable if adjacent.
-  function reachability(L) {
+  function reachability(L, opts) {
+    const doorsOpen = !!(opts && opts.doorsOpen);
     const seen = new Set(); let exitReachable = false;
     if (!L.start) return { seen, exitReachable };
     const q = [L.start]; seen.add(L.start.join(','));
@@ -83,6 +93,7 @@
         if (nx < 0 || ny < 0 || nx >= L.MW || ny >= L.MH || seen.has(k)) continue;
         const w = L.map[ny * L.MW + nx];
         if (w === EXIT_ID) { exitReachable = true; continue; }
+        if (w === SECRET_WALL_ID || (w === DOOR_ID && doorsOpen)) { seen.add(k); q.push([nx, ny]); continue; }
         if (w) continue;
         seen.add(k); q.push([nx, ny]);
       }
@@ -90,5 +101,5 @@
     return { seen, exitReachable };
   }
 
-  return { CAT_LETTERS, CAT_NAMES, AMMO_CHARS, TEXTURES, EXIT_ID, BORDER_ID, catType, parseLevel, reachability };
+  return { CAT_LETTERS, CAT_NAMES, AMMO_CHARS, TEXTURES, EXIT_ID, BORDER_ID, DOOR_ID, SECRET_WALL_ID, catType, parseLevel, reachability };
 });

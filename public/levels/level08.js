@@ -1,9 +1,13 @@
 // Level 8 — The Attic. Rafters cut the floor into 1-wide staircase corridors; zoomies ricochet down them.
 // A perimeter crawl loops the whole map, the chimney is the only landmark, and the Chonk owns the exit room.
+// Doom systems: hidey-holes inside the chimney itself (? on its north face, tuna) and in the cavity behind the
+// exit-room wall (catnip, reached through the pointless-looking alcove the void sits in); litter boxes below
+// the chimney, on the bottom run the trigger zoomies charge down, and in the Chonk's room.
 CatDoom.registerLevel({
   n: 8,
   name: 'The Attic',
   subtitle: 'Insulation, boxes of photographs, and something very fast.',
+  par: 230,
   theme: { walls: ['wood', 'wallpaper', 'stone'], border: 'wood', sky: '#1d1610', floor: '#3b2d1f', fog: 0.3 },
   start: { dir: 'E' },
   rows: [
@@ -16,18 +20,18 @@ CatDoom.registerLevel({
     '#..@z.@.....@..@v....@...#',
     '#...@.....@..@..@..@..@..#',
     '#t@.....@..@..@..@..@z.@.#',
-    '#.....@v.@..===@..@..@...#',
-    '#...@..@..@W===.@..@.....#',
-    '#.@..@..@..@===..@.....@.#',
-    '#.z@..@..@..@..@.....@.z.#',
-    '#......@z.@..@.....@..@.W#',
+    '#.....@v.@..=?=@..@..@...#',
+    '#...@..@..@W=$=.@..@.....#',
+    '#.@..@..@..@=T=..@.....@.#',
+    '#.z@..@..@..@=.@.....@.z.#',
+    '#......@z.@..@.!...@..@.W#',
     '#.@.....@..@.....@.v@..@.#',
-    '#..@.....@...z.@..@..@...#',
-    '#t..@..@.....@..@..@######',
+    '#..@.....@...z.@..@?$@...#',
+    '#t..@..@.....@..@..@N#####',
     '#.@..@v....@..@.z@..#....#',
     '#W.@.....@..@..@..@...c..E',
-    '#......@..@..@..@.T@#....#',
-    '#............t.......#####',
+    '#......@..@..@..@.T@#..!.#',
+    '#............t.!.....#####',
     '##########################',
   ],
   triggers: [

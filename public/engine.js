@@ -3,7 +3,10 @@
 'use strict';
 const P = window.CatDoomParse;
 const W = 320, H = 200, TEX = 64, FOV_PLANE = 0.66, LAST_LEVEL = 12;
-const EXIT_ID = P.EXIT_ID, BORDER_ID = P.BORDER_ID;
+const EXIT_ID = P.EXIT_ID, BORDER_ID = P.BORDER_ID, DOOR_ID = P.DOOR_ID, SECRET_ID = P.SECRET_WALL_ID;
+// pain chance (%): how often a spray hit makes a cat flinch (stops moving and attacking for a beat, resets its swipe)
+const PAIN = { kitten: 90, zoomie: 80, tabby: 70, void: 60, hurler: 60, sphynx: 50, ghost: 50, tuxedo: 40, wailer: 35, chonk: 15, matriarch: 8, bastet: 5 };
+const SKILLS = { kitten: { label: 'KITTEN', dmg: 0.6, speed: 1, water: 90, grace: true, blurb: 'soft paws' }, cat: { label: 'CAT', dmg: 1, speed: 1, water: 60, grace: true, blurb: 'as designed' }, lion: { label: 'LION', dmg: 1.4, speed: 1.15, water: 60, grace: false, blurb: 'no mercy, no grace period' } };
 const $ = id => document.getElementById(id);
 
 // ---------- cat types ----------
@@ -79,6 +82,13 @@ const texExitOpen = makeTex(g => {
   g.fillStyle = '#0a4a14'; g.font = 'bold 12px monospace'; g.fillText('EXIT', 18, 38); g.fillRect(28, 44, 8, 3); g.fillRect(31, 40, 2, 10);
 });
 const texSplash = makeTex(g => { g.clearRect(0, 0, TEX, TEX); for (let i = 0; i < 16; i++) { const a = i * 0.4, r = 10 + (i * 7) % 14; g.fillStyle = i % 3 ? '#8fd4ff' : '#ffffff'; g.beginPath(); g.arc(32 + Math.cos(a) * r, 30 + Math.sin(a) * r * 0.8, 2 + (i % 2), 0, 6.3); g.fill(); } });
+const texDoor = makeTex(g => { g.fillStyle = '#5a4630'; g.fillRect(0, 0, TEX, TEX); g.fillStyle = '#3d2f20'; g.fillRect(6, 4, 52, 60); g.fillStyle = '#2a2018'; g.fillRect(22, 40, 20, 20); g.strokeStyle = '#8a7a60'; g.lineWidth = 2; g.strokeRect(22, 40, 20, 20); g.fillStyle = '#c9a227'; g.fillRect(28, 20, 8, 10); g.fillStyle = '#222'; g.fillRect(31, 24, 2, 4); g.strokeStyle = '#c9a227'; g.beginPath(); g.arc(32, 20, 4, Math.PI, 0); g.stroke(); g.fillStyle = '#ffd7d7'; g.font = 'bold 7px monospace'; g.fillText('CATS ONLY', 12, 14); });
+const texDoorOpen = makeTex(g => { g.fillStyle = '#5a4630'; g.fillRect(0, 0, TEX, TEX); g.fillStyle = '#3d2f20'; g.fillRect(6, 4, 52, 60); g.fillStyle = '#000'; g.fillRect(22, 40, 20, 20); g.fillStyle = '#8a7a60'; g.beginPath(); g.moveTo(22, 40); g.lineTo(42, 40); g.lineTo(38, 52); g.lineTo(26, 52); g.fill(); g.fillStyle = '#4dff6a'; g.fillRect(28, 22, 8, 6); g.fillStyle = '#b8ffc4'; g.font = 'bold 7px monospace'; g.fillText('CATS ONLY', 12, 14); });
+const texKey = makeTex(g => { g.clearRect(0, 0, TEX, TEX); g.strokeStyle = '#c8303a'; g.lineWidth = 6; g.beginPath(); g.arc(32, 40, 14, 0, 6.3); g.stroke(); g.fillStyle = '#e8c040'; g.beginPath(); g.arc(32, 54, 7, 0, 6.3); g.fill(); g.fillStyle = '#7a5a10'; g.font = 'bold 7px monospace'; g.fillText('TAG', 25, 57); g.fillStyle = '#fff'; g.fillRect(31, 24, 2, 2); });
+const texBarrel = makeTex(g => { g.clearRect(0, 0, TEX, TEX); g.fillStyle = '#6a7a8a'; g.fillRect(8, 30, 48, 30); g.fillStyle = '#8a9aaa'; g.fillRect(8, 30, 48, 4); g.fillStyle = '#d8c8a0'; g.fillRect(12, 34, 40, 10); g.fillStyle = '#b8a880'; for (let i = 0; i < 12; i++) g.fillRect(14 + (i * 7) % 36, 35 + (i * 3) % 8, 2, 2); g.fillStyle = '#4a4a2a'; g.fillRect(20, 36, 5, 3); g.fillRect(36, 38, 6, 3); g.fillStyle = '#fff'; g.font = 'bold 7px monospace'; g.fillText('LITTER', 14, 54); g.fillStyle = '#ffd166'; g.fillText('FULL', 20, 28); });
+const texDust = makeTex(g => { g.clearRect(0, 0, TEX, TEX); for (let i = 0; i < 18; i++) { const a = i * 0.7, r = 8 + (i * 5) % 16; g.fillStyle = i % 2 ? 'rgba(216,200,160,.9)' : 'rgba(180,164,128,.8)'; g.beginPath(); g.arc(32 + Math.cos(a) * r * 0.8, 34 + Math.sin(a) * r * 0.6, 7 + (i % 3) * 2, 0, 6.3); g.fill(); } });
+let texSecret = null;   // per level: wall A with a faint claw scratch
+function makeSecretTex(base) { return makeTex(g => { g.drawImage(base, 0, 0); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.5; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(36 + i * 5, 22); g.lineTo(40 + i * 5, 46); g.stroke(); } g.strokeStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.moveTo(37, 22); g.lineTo(41, 46); g.stroke(); }); }
 const texHairball = makeTex(g => { g.clearRect(0, 0, TEX, TEX); g.fillStyle = '#6a5040'; for (let i = 0; i < 40; i++) { const a = i * 0.9, r = 14 + (i % 5) * 2; g.beginPath(); g.arc(32 + Math.cos(a) * r * 0.5, 32 + Math.sin(a) * r * 0.5, 6, 0, 6.3); g.fill(); } g.fillStyle = '#8a7060'; for (let i = 0; i < 12; i++) g.fillRect(24 + (i * 7) % 16, 24 + (i * 11) % 16, 2, 2); });
 
 // ---------- cat sprites (public/sprites.js) ----------
@@ -144,10 +154,11 @@ const tapLeft = { fwd: 0, back: 0, sl: 0, sr: 0, tl: 0, tr: 0, fire: 0 };
 const on = act => input[act] || tapLeft[act] > 0;
 let MW = 20, MH = 20, MAP = new Uint8Array(0), WALLTEX = [null, TEXTURES.brick, TEXTURES.stone, TEXTURES.wood, texExit, TEXTURES.stone];
 const G = { state: 'title', t: 0, level: 1, levelName: '', subtitle: '', cleared: false, exit: null, player: null, cats: [], pickups: [], shots: [], triggers: [], fog: 0, sky: '#2a2226', floor: '#4a3a2c',
-  tools: newBelt(), throws: [], items: [], hitMark: 0, reducedFx: false, paused: false, dmgMul: 1, speedMul: 1, dist: null, distT: 0, distCell: -1, zbuf: new Float32Array(W), fireCooldown: 0, recoil: 0, sprayFx: 0, hurtFlash: 0, walkBob: 0, showMap: true, msgTimer: 0, startedAt: 0, finishedAt: 0, kills: 0, totalKills: 0, levelFlash: 0, introT: 0, wailT: 0, procedural: false,
+  tools: newBelt(), throws: [], items: [], hitMark: 0, reducedFx: false, paused: false, dmgMul: 1, speedMul: 1, secrets: [], secretsFound: 0, barrels: [], doors: [], hasKey: false, doorMsgT: 0, par: 0, skill: 'cat', bowlsTotal: 0, bowlsTaken: 0, fightMsgT: 0, dist: null, distT: 0, distCell: -1, zbuf: new Float32Array(W), fireCooldown: 0, recoil: 0, sprayFx: 0, hurtFlash: 0, walkBob: 0, showMap: true, msgTimer: 0, startedAt: 0, finishedAt: 0, kills: 0, totalKills: 0, levelFlash: 0, introT: 0, wailT: 0, procedural: false,
   shake: 0, runT: 0, levelT: 0, levelWater: 0, levelDmg: 0, lastCard: '' };
 const wallAt = (x, y) => (x < 0 || y < 0 || x >= MW || y >= MH) ? BORDER_ID : MAP[(y | 0) * MW + (x | 0)];
-const solidAt = (x, y) => { const w = wallAt(x, y); return w === EXIT_ID ? !G.cleared : w !== 0; };
+const solidAt = (x, y) => { const w = wallAt(x, y); return w === EXIT_ID ? !G.cleared : w === DOOR_ID ? !G.hasKey : w === SECRET_ID ? false : w !== 0; };
+const barrelBlocks = (x, y, r) => { for (const b of G.barrels) if (b.alive && Math.abs(b.x - x) < r + 0.3 && Math.abs(b.y - y) < r + 0.3) return true; return false; };
 const msgEl = $('msg');
 const SAVE_KEY = 'catdoom.progress.v1';
 function loadProgress() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; } }
@@ -203,8 +214,12 @@ function loadLevel(n) {
   if (L.errors.length) { console.error('CatDoom level ' + n + ' has errors, using procedural fallback:\n' + L.errors.join('\n')); G.procedural = true; L = P.parseLevel(proceduralDef(n)); }
   MW = L.MW; MH = L.MH; MAP = L.map; G.exit = L.exit; G.levelName = L.name; G.subtitle = L.subtitle;
   const th = L.theme; G.fog = th.fog || 0; G.sky = th.sky; G.floor = th.floor;
-  G.dmgMul = (L.difficulty && L.difficulty.dmg) || 1; G.speedMul = (L.difficulty && L.difficulty.speed) || 1;
-  WALLTEX = [null, TEXTURES[th.walls[0]] || TEXTURES.brick, TEXTURES[th.walls[1]] || TEXTURES.stone, TEXTURES[th.walls[2]] || TEXTURES.wood, texExit, TEXTURES[th.border] || TEXTURES.stone];
+  const SK = SKILLS[G.skill] || SKILLS.cat;
+  G.dmgMul = ((L.difficulty && L.difficulty.dmg) || 1) * SK.dmg; G.speedMul = ((L.difficulty && L.difficulty.speed) || 1) * SK.speed;
+  G.secrets = (L.secrets || []).map(([x, y]) => ({ x, y, found: false })); G.secretsFound = 0; G.barrels = (L.barrels || []).map(b => ({ x: b.x, y: b.y, hp: 40, alive: true, fuse: 0 })); G.doors = L.doors || []; G.hasKey = false; G.doorMsgT = 0; G.fightMsgT = 0;
+  G.par = L.par || Math.round(45 + 9 * L.cats.length + 6 * (L.triggers || []).reduce((a, t) => a + t.spawn.length, 0));
+  WALLTEX = [null, TEXTURES[th.walls[0]] || TEXTURES.brick, TEXTURES[th.walls[1]] || TEXTURES.stone, TEXTURES[th.walls[2]] || TEXTURES.wood, texExit, TEXTURES[th.border] || TEXTURES.stone, texDoor, null];
+  texSecret = makeSecretTex(WALLTEX[1]); WALLTEX[7] = texSecret;
   const p = G.player; p.x = L.start[0] + 0.5; p.y = L.start[1] + 0.5;
   const DIRS = { E: [1, 0], W: [-1, 0], S: [0, 1], N: [0, -1] };
   let dir = L.dir && DIRS[L.dir];
@@ -213,6 +228,7 @@ function loadLevel(n) {
   const awake = new Set(L.awake);
   for (const c of L.cats) spawnCat(c.type, c.x, c.y, awake.has((c.x | 0) + ',' + (c.y | 0)));
   G.pickups = L.pickups.map(k => ({ x: k.x, y: k.y, kind: k.kind, taken: false, dist: 0 }));
+  G.bowlsTotal = G.pickups.filter(k => k.kind === 'water').length; G.bowlsTaken = 0;
   G.triggers = L.triggers.map(t => Object.assign({}, t, { fired: false }));
   // toolbelt: unlock + grant, and make sure the level has ammo drops for every unlocked tool
   const R = P.reachability(L), rnd = mulberry32(777 + n * 131), used = new Set(G.cats.map(c => (c.x | 0) + ',' + (c.y | 0)).concat(G.pickups.map(k => (k.x | 0) + ',' + (k.y | 0))));
@@ -272,24 +288,55 @@ function damageCat(c, dmg) {
   if (!c.alive) return;
   if (c.status && (c.status.kind === 'bagged' || c.status.kind === 'boxed' || c.status.kind === 'eating')) dmg *= 2;
   c.hp -= dmg; c.hit = 0.15; c.awake = true;
+  if (c.hp > 0 && Math.random() * 100 < (PAIN[c.type] || 50)) { c.flinch = 0.35; c.hit = 0.35; c.attackT = Math.max(c.attackT, 0.8); }
   if (c.hp <= 0) { c.alive = false; c.status = null; c.lure = null; G.kills++; G.totalKills++; SFX.nap(); say(c.t.name.toUpperCase() + (c.t.boss ? ' SLEEPS' : ' IS NAPPING'), c.t.boss ? 2500 : 1200); if (c.type === 'bastet') say('BASTET SLEEPS. THE HOUSE IS YOURS. FIND THE EXIT.', 4000); }
   else { SFX.hiss(); if (c.type === 'bastet' && !c.enraged && c.hp < c.maxHp / 2) { c.enraged = true; c.speed = 2.0; say('BASTET IS ANGRY', 2500); SFX.roar(); } }
 }
+// ---------- cat fights, litter boxes, hidey-holes ----------
+function attackCat(victim, attacker, dmg) {
+  if (!victim || !victim.alive) return;
+  damageCat(victim, dmg);
+  if (!victim.alive || !attacker || !attacker.alive || attacker === victim || victim.t.boss) return;
+  if (victim.owner === attacker || attacker.owner === victim || (victim.owner && victim.owner === attacker.owner)) return;   // a boss's summons never turn on their boss or each other
+  victim.target = attacker; victim.targetT = 8; victim.awake = true;
+  if (G.fightMsgT <= 0) { say('CAT FIGHT!', 1200); G.fightMsgT = 3; SFX.hiss(); }
+}
+function explodeBarrel(b, byCat) {
+  if (!b.alive) return; b.alive = false;
+  G.items.push({ kind: 'dust', x: b.x, y: b.y, t: 1.2 }); SFX.roar(); if (!G.reducedFx) G.shake = Math.max(G.shake || 0, 0.35);
+  const p = G.player;
+  for (const c of G.cats) if (c.alive && Math.hypot(c.x - b.x, c.y - b.y) < 2.2) { if (byCat) attackCat(c, byCat, 70); else damageCat(c, 70); if (c.alive && !c.t.boss) setStatus(c, 'dazed', 2); }
+  if (Math.hypot(p.x - b.x, p.y - b.y) < 2.2) hurtPlayer(15);
+  for (const o of G.barrels) if (o.alive && o !== b && !o.fuse && Math.hypot(o.x - b.x, o.y - b.y) < 2.2) o.fuse = 0.25;
+  say('THE LITTER BOX GOES UP', 1200);
+}
 function reset(level) {
-  G.player = { x: 1.5, y: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: FOV_PLANE, hp: 100, water: 60, maxWater: 60 };
+  const SKw = (SKILLS[G.skill] || SKILLS.cat).water;
+  G.player = { x: 1.5, y: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: FOV_PLANE, hp: 100, water: SKw, maxWater: SKw };
   G.totalKills = 0; G.startedAt = performance.now(); G.tools = newBelt();
   G.runT = 0; G.lastCard = '';
   loadLevel(level || 1);
 }
 function nextLevel() {
   const p = G.player; p.water = Math.min(p.maxWater, p.water + 25); p.hp = Math.min(100, p.hp + 10);
-  G.lastCard = levelCard();
+  G.lastCard = levelCard(); recordLevel();
   loadLevel(G.level + 1); SFX.pickup();
 }
 const mmss = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 // The one-line scorecard for the room you just walked out of; drawn under the next room's intro card.
+function levelGrade() {
+  const cats = G.cats.length ? G.kills / G.cats.length : 1, sec = G.secrets.length ? G.secretsFound / G.secrets.length : 1, underPar = G.levelT <= G.par;
+  if (cats >= 1 && sec >= 1 && underPar) return 'S'; if (underPar || sec >= 1) return 'A'; if (cats >= 1) return 'B'; return 'C';
+}
 function levelCard() {
-  return 'LAST ROOM: ' + mmss(G.levelT) + ' · ' + G.kills + (G.kills === 1 ? ' CAT' : ' CATS') + ' · ' + G.levelWater + (G.levelWater === 1 ? ' SPRAY' : ' SPRAYS') + (G.levelDmg > 0 ? ' · -' + G.levelDmg + ' HP' : ' · UNTOUCHED');
+  const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+  return 'CATS ' + pct(G.kills, G.cats.length) + ' · BOWLS ' + G.bowlsTaken + '/' + G.bowlsTotal + (G.secrets.length ? ' · SECRETS ' + G.secretsFound + '/' + G.secrets.length : '') + ' · ' + mmss(G.levelT) + ' (PAR ' + mmss(G.par) + ') · GRADE ' + levelGrade();
+}
+function recordLevel() {
+  const prog = loadProgress(), levels = prog.levels || {}, prev = levels[G.level] || {};
+  const g = levelGrade(), order = 'CBAS';
+  levels[G.level] = { time: prev.time ? Math.min(prev.time, Math.round(G.levelT)) : Math.round(G.levelT), secrets: Math.max(prev.secrets || 0, G.secretsFound), secretsTotal: G.secrets.length, grade: order.indexOf(g) > order.indexOf(prev.grade || 'C') ? g : (prev.grade || g) };
+  saveProgress({ levels });
 }
 function shareText() {
   const t = mmss(G.runT);
@@ -306,7 +353,7 @@ function fireTrigger(t) {
 }
 
 // ---------- helpers ----------
-function canStand(x, y, r = 0.25) { return !solidAt(x - r, y - r) && !solidAt(x + r, y - r) && !solidAt(x - r, y + r) && !solidAt(x + r, y + r); }
+function canStand(x, y, r = 0.25) { return !solidAt(x - r, y - r) && !solidAt(x + r, y - r) && !solidAt(x - r, y + r) && !solidAt(x + r, y + r) && !barrelBlocks(x, y, r); }
 function moveWithSlide(o, dx, dy, r) { if (canStand(o.x + dx, o.y, r)) o.x += dx; if (canStand(o.x, o.y + dy, r)) o.y += dy; }
 function lineOfSight(x0, y0, x1, y1) {
   const dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy), n = Math.ceil(d / 0.08);
@@ -323,7 +370,8 @@ function fire() {
   G.fireCooldown = 0.34; G.recoil = 1; G.sprayFx = 1;
   if (p.water <= 0) { say('OUT OF WATER — find a bowl', 900); tone('square', 200, 150, 0.08, 0.1); return false; }
   p.water--; G.levelWater++; SFX.spray();
-  for (const c of G.cats) if (c.alive && Math.hypot(c.x - p.x, c.y - p.y) < 12) c.awake = true;
+  if (!G.dist) computeDist();
+  for (const c of G.cats) { if (!c.alive || c.awake) continue; if (c.t.phasing) { if (c.dist < 9) c.awake = true; continue; } const dd = G.dist[(c.y | 0) * MW + (c.x | 0)]; if (dd >= 0 && dd <= 9) c.awake = true; }   // they hear the bottle through open space, not through walls
   let best = null, bestD = 7;
   for (const c of G.cats) {
     if (!c.alive) continue;
@@ -333,6 +381,9 @@ function fire() {
     const side = Math.abs(vx * p.dirY - vy * p.dirX), inCone = side / d <= 0.44 || side <= 0.45 * c.t.scale + (d < 1.3 ? 0.4 : 0);
     if (inCone && (c.t.phasing || lineOfSight(p.x, p.y, c.x, c.y))) { best = c; bestD = d; }
   }
+  let bestB = null;
+  for (const b of G.barrels) { if (!b.alive) continue; const vx = b.x - p.x, vy = b.y - p.y, d = Math.hypot(vx, vy); if (d > bestD || d < 0.05) continue; const forward = (vx * p.dirX + vy * p.dirY) / d; if (forward <= 0) continue; const side = Math.abs(vx * p.dirY - vy * p.dirX); if ((side / d <= 0.3 || side <= 0.35) && lineOfSight(p.x, p.y, b.x, b.y)) { bestB = b; bestD = d; best = null; } }
+  if (bestB) { bestB.hp -= 40; G.hitMark = 0.18; SFX.thud(); if (bestB.hp <= 0) explodeBarrel(bestB, null); }
   if (best) {
     if (!best.t.boss && !(best.status && best.status.kind === 'boxed')) { const kx = best.x - p.x, ky = best.y - p.y, kd = Math.hypot(kx, ky) || 1; if (best.t.phasing) { best.x += kx / kd * 0.25; best.y += ky / kd * 0.25; } else moveWithSlide(best, kx / kd * 0.25, ky / kd * 0.25, 0.2); }
     damageCat(best, bestD < 2.5 ? 40 : 28); best.splash = 0.3; G.hitMark = 0.18;
@@ -369,6 +420,8 @@ function chaseInner(c, dt, speed, toward = 1, target) {
   moveWithSlide(c, sx / sl * speed * dt, sy / sl * speed * dt, 0.2);
 }
 // Which way is the cat facing relative to the player? Uses the heading it moved last.
+// a panicking cat that crashes into another cat starts a fight
+function bump(c, dt) { c.bumpT = (c.bumpT || 0) - dt; if (c.bumpT > 0) return; for (const o of G.cats) { if (o === c || !o.alive) continue; if (Math.hypot(o.x - c.x, o.y - c.y) < 0.55) { c.bumpT = 0.8; attackCat(o, c, 6); break; } } }
 function catFacing(c) {
   const hx = c.hx || 0, hy = c.hy || 0; if (Math.hypot(hx, hy) < 0.02) return 'front';
   const p = G.player, tx = p.x - c.x, ty = p.y - c.y, d = Math.hypot(tx, ty) || 1;
@@ -377,7 +430,7 @@ function catFacing(c) {
 }
 function spit(c) {
   const p = G.player, dx = p.x - c.x, dy = p.y - c.y, d = Math.hypot(dx, dy) || 1;
-  G.shots.push({ x: c.x, y: c.y, vx: dx / d * 4.5, vy: dy / d * 4.5, life: 4 }); SFX.spit();
+  G.shots.push({ x: c.x, y: c.y, vx: dx / d * 4.5, vy: dy / d * 4.5, life: 4, from: c, age: 0 }); SFX.spit();
 }
 function updateCat(c, dt) {
   const p = G.player;
@@ -386,15 +439,20 @@ function updateCat(c, dt) {
   if (c.hit > 0) c.hit -= dt; if (c.splash > 0) c.splash -= dt;
   c.hx = c.x - (c.px === undefined ? c.x : c.px); c.hy = c.y - (c.py === undefined ? c.y : c.py); c.px = c.x; c.py = c.y;
   { const cand = catFacing(c); if (cand === c.facing) c.facingT = 0; else { c.facingT = (c.facingT || 0) + dt; if (c.facingT > 0.12 || !c.facing) { c.facing = cand; c.facingT = 0; } } }
-  if (G.introT > 0.4) return;   // grace: nothing moves while the level card is up
+  if (G.introT > 0.4 && (SKILLS[G.skill] || SKILLS.cat).grace) return;   // grace: nothing moves while the level card is up (not on LION)
   if (!c.awake && c.dist < 7 && (c.t.phasing || lineOfSight(p.x, p.y, c.x, c.y))) { c.awake = true; if (!c.t.silent) SFX.meow(); }
   if (!c.awake) return;
   const speed = c.speed * (G.wailT > 0 ? 1.5 : 1);
+  if (c.flinch > 0) { c.flinch -= dt; return; }   // pain state: a flinching cat does nothing for a beat
+  if (c.target) {
+    if (!c.target.alive || (c.targetT -= dt) <= 0) { c.target = null; }
+    else if (!c.status) { const td = Math.hypot(c.target.x - c.x, c.target.y - c.y); if (td > 0.75) { chase(c, dt, speed, 1, c.target); return; } c.attackT -= dt; if (c.attackT <= 0) { c.attackT = 1.1; attackCat(c.target, c, c.t.dmg); } return; }
+  }
   if (c.status) {
     c.status.t -= dt;
     if (c.status.t <= 0) { const was = c.status.kind; c.status = null; if (was === 'eating') { c.awake = false; c.attackT = 0.9; SFX.purr(); return; } }   // a fed cat is a calm cat: it forgets you until it sees you again
-    else if (c.status.kind === 'scared') { chase(c, dt, speed * 1.5, -1); return; }   // runs straight away from you, cannot attack
-    else if (c.status.kind === 'bagged') { c.strafeT -= dt; if (c.strafeT <= 0) { c.strafeT = 0.4 + Math.random() * 0.4; const a = Math.random() * 6.28; c.panic = [Math.cos(a), Math.sin(a)]; } if (c.panic) moveWithSlide(c, c.panic[0] * speed * 1.3 * dt, c.panic[1] * speed * 1.3 * dt, 0.2); return; }
+    else if (c.status.kind === 'scared') { chase(c, dt, speed * 1.5, -1); bump(c, dt); return; }   // runs straight away from you, cannot attack
+    else if (c.status.kind === 'bagged') { c.strafeT -= dt; if (c.strafeT <= 0) { c.strafeT = 0.4 + Math.random() * 0.4; const a = Math.random() * 6.28; c.panic = [Math.cos(a), Math.sin(a)]; } if (c.panic) moveWithSlide(c, c.panic[0] * speed * 1.3 * dt, c.panic[1] * speed * 1.3 * dt, 0.2); bump(c, dt); return; }
     else return;   // dazed / tangled / boxed: sits there
   }
   if (c.lure) {
@@ -468,7 +526,10 @@ function update(dt) {
     s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
     if (wallAt(s.x, s.y)) s.life = 0;
     else if (Math.hypot(s.x - p.x, s.y - p.y) < 0.45) { s.life = 0; if (hurtPlayer(10)) return; }
+    else { s.age = (s.age || 0) + dt; if (s.age > 0.25) { const v = G.cats.find(c => c.alive && c !== s.from && Math.hypot(c.x - s.x, c.y - s.y) < 0.45); if (v) { s.life = 0; attackCat(v, s.from, 10); } else { const b = G.barrels.find(b => b.alive && Math.hypot(b.x - s.x, b.y - s.y) < 0.5); if (b) { s.life = 0; b.hp -= 20; if (b.hp <= 0) explodeBarrel(b, s.from); } } } }
   }
+  for (const b of G.barrels) if (b.alive && b.fuse) { b.fuse -= dt; if (b.fuse <= 0) { b.fuse = 0; explodeBarrel(b, null); } }
+  G.fightMsgT = Math.max(0, G.fightMsgT - dt);
   G.shots = G.shots.filter(s => s.life > 0);
   for (const s of G.throws) { const nx = s.x + s.vx * dt, ny = s.y + s.vy * dt; s.life -= dt; if (wallAt(nx, ny)) s.life = 0; else { s.x = nx; s.y = ny; } if (s.kind === 'yarn' && s.life > 0 && G.cats.some(c => c.alive && Math.hypot(c.x - s.x, c.y - s.y) < 0.6)) s.life = 0; if (s.life <= 0) landThrow(s); }
   G.throws = G.throws.filter(s => s.life > 0);
@@ -484,10 +545,15 @@ function update(dt) {
     const trig = G.triggers.some(t => !t.fired && t.when === 'pickup' && t.x === (k.x | 0) && t.y === (k.y | 0));
     if (k.kind === 'water') { if (p.water >= p.maxWater && !trig) continue; p.water = Math.min(p.maxWater, p.water + 30); say('+30 WATER', 900); }
     else if (k.kind === 'tuna') { if (p.hp >= 100 && !trig) continue; p.hp = Math.min(100, p.hp + 35); say('+35 HP (tuna)', 900); }
+    else if (k.kind === 'key') { G.hasKey = true; say('THE COLLAR TAG. SOMEWHERE THERE IS A CAT FLAP IT FITS.', 2600); SFX.win(); }
     else if (TOOLS[k.kind]) { const t = TOOLS[k.kind]; if (G.tools[k.kind] >= t.cap && !trig) continue; G.tools[k.kind] = Math.min(t.cap, G.tools[k.kind] + t.pickup); say('+' + t.pickup + ' ' + t.label, 900); }
+    if (k.kind === 'water') G.bowlsTaken++;
     k.taken = true; SFX.pickup();
     for (const t of G.triggers) if (!t.fired && t.when === 'pickup' && t.x === (k.x | 0) && t.y === (k.y | 0)) fireTrigger(t);
   }
+  // hidey-holes and the cat flap
+  for (const sc of G.secrets) if (!sc.found && (p.x | 0) === sc.x && (p.y | 0) === sc.y) { sc.found = true; G.secretsFound++; say('SECRET FOUND (' + G.secretsFound + '/' + G.secrets.length + ')', 1600); SFX.win(); }
+  G.doorMsgT -= dt; if (!G.hasKey && G.doorMsgT <= 0) for (const [dx, dy] of G.doors) if (Math.hypot(dx + 0.5 - p.x, dy + 0.5 - p.y) < 1.4) { G.doorMsgT = 3; say('LOCKED. THE CAT FLAP WANTS A COLLAR TAG.', 2200); SFX.slam(); break; }
   // triggers
   for (const t of G.triggers) {
     if (t.fired) continue;
@@ -516,6 +582,7 @@ function showOverlay(kind) {
   $('startbtn').textContent = kind === 'title' ? (cont ? 'NEW GAME' : 'START') : (cont ? 'START OVER' : 'PLAY AGAIN');
   $('ovtext').hidden = kind === 'title'; if (kind === 'title') $('ovsub').textContent = 'Doom, but the demons are cats.';
   buildLevelSelect(kind === 'title' ? best : 0);
+  $('skillsel').hidden = kind !== 'title'; for (const b of document.querySelectorAll('#skillsel button')) b.classList.toggle('on', b.dataset.skill === G.skill);
   const copy = $('copybtn'); copy.hidden = kind === 'title'; copy.textContent = 'COPY RESULT'; copy.disabled = false;
   if (AUD()) try { AUD().stop(); } catch (e) {}
 }
@@ -523,7 +590,8 @@ function showOverlay(kind) {
 function buildLevelSelect(best) {
   const row = $('levelsel'); row.textContent = ''; row.hidden = !(best > 1);
   if (!(best > 1)) return;
-  for (let n = 1; n <= best; n++) { const b = document.createElement('button'); b.className = 'lvl'; b.textContent = n; b.title = 'Start at level ' + n; b.addEventListener('click', () => start(n)); row.appendChild(b); }
+  const lv = loadProgress().levels || {};
+  for (let n = 1; n <= best; n++) { const b = document.createElement('button'); b.className = 'lvl'; const r = lv[n]; b.innerHTML = n + (r ? '<small>' + (r.grade || '') + (r.time ? ' ' + mmss(r.time) : '') + (r.secretsTotal ? ' ' + r.secrets + '/' + r.secretsTotal + '$' : '') + '</small>' : ''); b.title = 'Start at level ' + n + (r ? ' — best ' + mmss(r.time) + ', grade ' + r.grade : ''); b.addEventListener('click', () => start(n)); row.appendChild(b); }
 }
 function copyResult() {
   const text = shareText(), btn = $('copybtn');
@@ -540,6 +608,7 @@ function endGame() {
   $('ovtext').textContent = 'You reached LEVEL ' + G.level + ' (' + G.levelName + ') and put ' + G.totalKills + ' cats to sleep in ' + secs + ' seconds before the fur took you. Keep your distance and back up while you spray.';
 }
 function victory() {
+  recordLevel();
   G.state = 'won'; G.finishedAt = performance.now();
   const secs = G.runT.toFixed(0);
   showOverlay('won');
@@ -576,7 +645,7 @@ function render() {
     const lineH = H / perp, top = H / 2 - lineH / 2;
     let wallX = side === 0 ? p.y + perp * rdy : p.x + perp * rdx; wallX -= Math.floor(wallX);
     let texX = (wallX * TEX) | 0; if ((side === 0 && rdx < 0) || (side === 1 && rdy > 0)) texX = TEX - 1 - texX;
-    ctx.drawImage(hit === EXIT_ID ? (G.cleared ? texExitOpen : texExit) : (WALLTEX[hit] || TEXTURES.stone), texX, 0, 1, TEX, x, top, 1, lineH);
+    ctx.drawImage(hit === EXIT_ID ? (G.cleared ? texExitOpen : texExit) : hit === DOOR_ID ? (G.hasKey ? texDoorOpen : texDoor) : (WALLTEX[hit] || TEXTURES.stone), texX, 0, 1, TEX, x, top, 1, lineH);
     const beam = 1 - lamp * Math.max(0, 1 - Math.abs(camX) * 1.5);   // flashlight: the centre of the view stays brighter in dark levels
     const dark = (hit === EXIT_ID && G.cleared) ? Math.min(0.4, perp / 30) : Math.min(0.92, (perp / fogK) * beam + (side ? 0.18 : 0));
     if (dark > 0.02) { ctx.fillStyle = 'rgba(0,0,0,' + dark.toFixed(2) + ')'; ctx.fillRect(x, top, 1, lineH); }
@@ -586,9 +655,12 @@ function render() {
   for (const k of G.pickups) if (!k.taken && PICK_SPRITES[k.kind]) sprites.push({ x: k.x, y: k.y, d: k.dist, img: PICK_SPRITES[k.kind], scale: 0.4, bob: Math.sin(G.t * 3 + k.x) * 1.5, z: 0, alpha: 1 });
   for (const s of G.shots) sprites.push({ x: s.x, y: s.y, d: Math.hypot(s.x - p.x, s.y - p.y), img: texHairball, scale: 0.22, bob: 0, z: 0.35, alpha: 1 });
   for (const s of G.throws) { const f = 1 - s.life / s.total; sprites.push({ x: s.x, y: s.y, d: Math.hypot(s.x - p.x, s.y - p.y), img: TOOL_SPRITES[s.kind], scale: 0.3, bob: 0, z: 0.2 + Math.sin(f * Math.PI) * 0.45, alpha: 1 }); }
-  for (const it of G.items) { const dot = it.sub === 'laserdot'; sprites.push({ x: it.x, y: it.y, d: Math.hypot(it.x - p.x, it.y - p.y), img: TOOL_SPRITES[it.sub || it.kind], scale: dot ? 0.2 : it.kind === 'box' ? 0.7 : 0.35, bob: dot ? 0 : it.kind === 'lure' ? Math.sin(G.t * 5) * 1.5 : 0, z: 0, alpha: dot ? Math.min(0.95, it.t) : it.t < 1 ? it.t : 1 }); }
+  for (const it of G.items) if (it.kind === 'dust') sprites.push({ x: it.x, y: it.y, d: Math.hypot(it.x - p.x, it.y - p.y), img: texDust, scale: 1.2 + (1.2 - it.t), bob: 0, z: 0.1, alpha: Math.min(1, it.t) });
+  for (const it of G.items) { if (it.kind === 'dust') continue; const dot = it.sub === 'laserdot'; sprites.push({ x: it.x, y: it.y, d: Math.hypot(it.x - p.x, it.y - p.y), img: TOOL_SPRITES[it.sub || it.kind], scale: dot ? 0.2 : it.kind === 'box' ? 0.7 : 0.35, bob: dot ? 0 : it.kind === 'lure' ? Math.sin(G.t * 5) * 1.5 : 0, z: 0, alpha: dot ? Math.min(0.95, it.t) : it.t < 1 ? it.t : 1 }); }
   for (const c of G.cats) if (c.alive && c.splash > 0) sprites.push({ x: c.x, y: c.y, d: c.dist - 0.02, img: texSplash, scale: c.t.scale * 0.7, bob: 0, z: c.t.scale * 0.25, alpha: Math.min(1, c.splash * 4) });
   for (const c of G.cats) if (c.alive && c.status) { const k = c.status.kind, img = TOOL_SPRITES[STATUS_ICON[k]]; if (!img) continue; sprites.push({ x: c.x, y: c.y, d: c.dist - 0.01, img, scale: k === 'boxed' ? c.t.scale * 1.1 : k === 'bagged' ? 0.3 : 0.32, bob: k === 'dazed' ? Math.sin(G.t * 4 + c.phase) * 2 : 0, z: k === 'bagged' ? c.t.scale * 0.55 : k === 'dazed' ? c.t.scale * 0.9 : k === 'tangled' ? 0.05 : k === 'eating' ? 0.02 : 0, alpha: 1 }); }
+  for (const k of G.pickups) if (!k.taken && k.kind === 'key') sprites.push({ x: k.x, y: k.y, d: k.dist, img: texKey, scale: 0.4, bob: Math.sin(G.t * 4) * 2, z: 0.1, alpha: 1 });
+  for (const b of G.barrels) if (b.alive) sprites.push({ x: b.x, y: b.y, d: Math.hypot(b.x - p.x, b.y - p.y), img: texBarrel, scale: 0.6, bob: 0, z: 0, alpha: 1 });
   for (const k of G.pickups) if (!k.taken && TOOLS[k.kind]) sprites.push({ x: k.x, y: k.y, d: k.dist, img: TOOL_SPRITES[k.kind], scale: 0.35, bob: Math.sin(G.t * 3 + k.y) * 1.5, z: 0, alpha: 1 });
   sprites.sort((a, b) => b.d - a.d);
   const invDet = 1 / (p.planeX * p.dirY - p.dirX * p.planeY);
@@ -659,7 +731,9 @@ function render() {
   if (G.showMap) {
     const cs = MW > 22 ? 2 : 3, ox = W - MW * cs - 4, oy = 4;
     ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(ox - 2, oy - 2, MW * cs + 4, MH * cs + 4);
-    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const w = MAP[y * MW + x]; if (!w) continue; ctx.fillStyle = w === EXIT_ID ? (G.cleared ? '#4dff6a' : '#c33') : '#8a7a70'; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs); }
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const w = MAP[y * MW + x]; if (!w) continue; ctx.fillStyle = w === EXIT_ID ? (G.cleared ? '#4dff6a' : '#c33') : w === DOOR_ID ? (G.hasKey ? '#4dff6a' : '#ffd166') : '#8a7a70'; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs); }
+    for (const b of G.barrels) if (b.alive) { ctx.fillStyle = '#d8c8a0'; ctx.fillRect(ox + b.x * cs - 1, oy + b.y * cs - 1, 2, 2); }
+    for (const sc of G.secrets) if (sc.found) { ctx.fillStyle = '#ffd166'; ctx.fillRect(ox + sc.x * cs, oy + sc.y * cs, cs, cs); }
     for (const c of G.cats) { ctx.fillStyle = c.alive ? (c.awake ? '#ff4040' : '#ffa040') : '#5aa'; const big = c.alive && G.huntCalled && Math.sin(G.t * 8) > 0; ctx.fillRect(ox + c.x * cs - (big ? 2 : 1), oy + c.y * cs - (big ? 2 : 1), big ? 4 : 2, big ? 4 : 2); }
     for (const k of G.pickups) if (!k.taken) { ctx.fillStyle = k.kind === 'water' ? '#3ab0ff' : k.kind === 'tuna' ? '#f7b' : '#ffd166'; ctx.fillRect(ox + k.x * cs - 1.5, oy + k.y * cs - 0.5, 3, 1); ctx.fillRect(ox + k.x * cs - 0.5, oy + k.y * cs - 1.5, 1, 3); }
     ctx.fillStyle = '#8f8'; ctx.fillRect(ox + p.x * cs - 1, oy + p.y * cs - 1, 3, 3);
@@ -721,6 +795,8 @@ function start(level) { reset(level || startLevel); G.paused = false; $('pausebt
 $('startbtn').addEventListener('click', () => start(startLevel));
 $('contbtn').addEventListener('click', () => start(parseInt($('contbtn').dataset.level, 10) || 1));
 $('copybtn').addEventListener('click', copyResult);
+try { G.skill = SKILLS[localStorage.getItem('catdoom.skill')] ? localStorage.getItem('catdoom.skill') : 'cat'; } catch (e) {}
+for (const k in SKILLS) { const b = document.createElement('button'); b.dataset.skill = k; b.innerHTML = SKILLS[k].label + '<small>' + SKILLS[k].blurb + '</small>'; b.addEventListener('click', () => { G.skill = k; try { localStorage.setItem('catdoom.skill', k); } catch (e) {} for (const o of document.querySelectorAll('#skillsel button')) o.classList.toggle('on', o.dataset.skill === k); }); $('skillsel').appendChild(b); }
 showOverlay('title');
 // reduced-flash option (accessibility): vignette instead of full-screen flashes
 try { G.reducedFx = localStorage.getItem('catdoom.reducedFx') === '1'; } catch (e) {}
@@ -736,7 +812,7 @@ window.addEventListener('load', () => { reset(startLevel); requestAnimationFrame
 window.CatDoom = {
   registerLevel, LEVELS, CAT_TYPES, LAST_LEVEL,
   get state() { return G.state; }, get level() { return G.level; }, get levelName() { return G.levelName; }, get cleared() { return G.cleared; }, get exit() { return G.exit; }, get player() { return G.player; }, get cats() { return G.cats; }, get shots() { return G.shots; }, get items() { return G.items; }, get throws() { return G.throws; }, get tools() { return G.tools; }, useTool, TOOLS, get triggers() { return G.triggers; }, get input() { return input; }, get kills() { return G.kills; }, get fps() { return fps; }, get procedural() { return G.procedural; },
-  get shareText() { return shareText(); }, get lastCard() { return G.lastCard; }, get runT() { return G.runT; }, get levelT() { return G.levelT; }, get paused() { return G.paused; }, pause: togglePause, get wailT() { return G.wailT; }, get speedMul() { return G.speedMul; }, get introT() { return G.introT; }, get shake() { return G.shake; },
+  get shareText() { return shareText(); }, get lastCard() { return G.lastCard; }, get runT() { return G.runT; }, get levelT() { return G.levelT; }, get paused() { return G.paused; }, pause: togglePause, get wailT() { return G.wailT; }, get secrets() { return G.secrets; }, get barrels() { return G.barrels; }, get hasKey() { return G.hasKey; }, get skill() { return G.skill; }, get par() { return G.par; }, levelCard, explodeBarrel, attackCat, SKILLS, PAIN, get speedMul() { return G.speedMul; }, get introT() { return G.introT; }, get shake() { return G.shake; },
   wall: (x, y) => wallAt(x, y), start, fire,
   cheat: !DEBUG ? undefined : { get pickups() { return G.pickups; }, tick(dt) { update(dt); render(); renderHud(); }, snapshot() { return cv.toDataURL('image/png'); }, napAll() { for (const c of G.cats) if (c.alive) { c.alive = false; G.kills++; G.totalKills++; } }, warp(n) { if (!G.player) reset(n); else loadLevel(n); }, spawn: spawnCat },
 };
