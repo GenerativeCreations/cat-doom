@@ -1,6 +1,7 @@
 // Level 1 — The Hallway. Reference level: the original hand-built map, trimmed to 8 tabbies as a warm-up.
 CatDoom.registerLevel({
   n: 1,
+  difficulty: { dmg: 0.6 },   // onboarding: cats hit softer in the first rooms
   name: 'The Hallway',
   subtitle: 'The house has been overrun. Only the spray bottle remains.',
   theme: { walls: ['brick', 'wood', 'stone'], border: 'stone', sky: '#2a2226', floor: '#4a3a2c', fog: 0 },

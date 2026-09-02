@@ -2,6 +2,7 @@
 // the tuna sits in the notch between them and springs two voids from both ends of the aisle.
 CatDoom.registerLevel({
   n: 2,
+  difficulty: { dmg: 0.8 },   // onboarding: cats hit softer in the first rooms
   name: 'The Kitchen',
   subtitle: 'Something is on the counter. It was not there a moment ago.',
   theme: { walls: ['tile', 'wood', 'metal'], border: 'tile', sky: '#c7d4dc', floor: '#6e757b', fog: 0.1 },

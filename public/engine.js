@@ -144,7 +144,7 @@ const tapLeft = { fwd: 0, back: 0, sl: 0, sr: 0, tl: 0, tr: 0, fire: 0 };
 const on = act => input[act] || tapLeft[act] > 0;
 let MW = 20, MH = 20, MAP = new Uint8Array(0), WALLTEX = [null, TEXTURES.brick, TEXTURES.stone, TEXTURES.wood, texExit, TEXTURES.stone];
 const G = { state: 'title', t: 0, level: 1, levelName: '', subtitle: '', cleared: false, exit: null, player: null, cats: [], pickups: [], shots: [], triggers: [], fog: 0, sky: '#2a2226', floor: '#4a3a2c',
-  tools: newBelt(), throws: [], items: [], hitMark: 0, reducedFx: false, dist: null, distT: 0, distCell: -1, zbuf: new Float32Array(W), fireCooldown: 0, recoil: 0, sprayFx: 0, hurtFlash: 0, walkBob: 0, showMap: true, msgTimer: 0, startedAt: 0, finishedAt: 0, kills: 0, totalKills: 0, levelFlash: 0, introT: 0, wailT: 0, procedural: false,
+  tools: newBelt(), throws: [], items: [], hitMark: 0, reducedFx: false, paused: false, dmgMul: 1, speedMul: 1, dist: null, distT: 0, distCell: -1, zbuf: new Float32Array(W), fireCooldown: 0, recoil: 0, sprayFx: 0, hurtFlash: 0, walkBob: 0, showMap: true, msgTimer: 0, startedAt: 0, finishedAt: 0, kills: 0, totalKills: 0, levelFlash: 0, introT: 0, wailT: 0, procedural: false,
   shake: 0, runT: 0, levelT: 0, levelWater: 0, levelDmg: 0, lastCard: '' };
 const wallAt = (x, y) => (x < 0 || y < 0 || x >= MW || y >= MH) ? BORDER_ID : MAP[(y | 0) * MW + (x | 0)];
 const solidAt = (x, y) => { const w = wallAt(x, y); return w === EXIT_ID ? !G.cleared : w !== 0; };
@@ -192,7 +192,7 @@ function spawnCat(type, x, y, awake, owner) {
   if (!t.phasing) { // find a free cell if the requested one is solid
     if (solidAt(x, y)) { let found = null; for (let r = 1; r <= 3 && !found; r++) for (let dy = -r; dy <= r && !found; dy++) for (let dx = -r; dx <= r && !found; dx++) if (!solidAt(x + dx, y + dy)) found = [x + dx, y + dy]; if (found) { x = found[0]; y = found[1]; } }
   }
-  const c = { x, y, type, t, speed: t.speed, hp: t.hp, maxHp: t.hp, awake: !!awake || !!t.boss, alive: true, hit: 0, attackT: 0, phase: Math.random() * 6.28, dist: 0, fireT: 1 + Math.random(), strafeT: 0, strafeDir: 1, wailT: 4, spawnT: 5, owner: owner || null, enraged: false };
+  const c = { x, y, type, t, speed: t.speed * (G.speedMul || 1), hp: t.hp, maxHp: t.hp, awake: !!awake || !!t.boss, alive: true, hit: 0, attackT: 0, phase: Math.random() * 6.28, dist: 0, fireT: 1 + Math.random(), strafeT: 0, strafeDir: 1, wailT: 4, spawnT: type === 'bastet' ? 14 : type === 'matriarch' ? 12 : 5, owner: owner || null, enraged: false };
   G.cats.push(c); return c;
 }
 function loadLevel(n) {
@@ -203,6 +203,7 @@ function loadLevel(n) {
   if (L.errors.length) { console.error('CatDoom level ' + n + ' has errors, using procedural fallback:\n' + L.errors.join('\n')); G.procedural = true; L = P.parseLevel(proceduralDef(n)); }
   MW = L.MW; MH = L.MH; MAP = L.map; G.exit = L.exit; G.levelName = L.name; G.subtitle = L.subtitle;
   const th = L.theme; G.fog = th.fog || 0; G.sky = th.sky; G.floor = th.floor;
+  G.dmgMul = (L.difficulty && L.difficulty.dmg) || 1; G.speedMul = (L.difficulty && L.difficulty.speed) || 1;
   WALLTEX = [null, TEXTURES[th.walls[0]] || TEXTURES.brick, TEXTURES[th.walls[1]] || TEXTURES.stone, TEXTURES[th.walls[2]] || TEXTURES.wood, texExit, TEXTURES[th.border] || TEXTURES.stone];
   const p = G.player; p.x = L.start[0] + 0.5; p.y = L.start[1] + 0.5;
   const DIRS = { E: [1, 0], W: [-1, 0], S: [0, 1], N: [0, -1] };
@@ -319,7 +320,7 @@ function hurtPlayer(dmg) { const p = G.player; p.hp -= dmg; G.levelDmg += dmg; G
 function fire() {
   const p = G.player;
   if (G.fireCooldown > 0) return false;
-  G.fireCooldown = 0.28; G.recoil = 1; G.sprayFx = 1;
+  G.fireCooldown = 0.34; G.recoil = 1; G.sprayFx = 1;
   if (p.water <= 0) { say('OUT OF WATER — find a bowl', 900); tone('square', 200, 150, 0.08, 0.1); return false; }
   p.water--; G.levelWater++; SFX.spray();
   for (const c of G.cats) if (c.alive && Math.hypot(c.x - p.x, c.y - p.y) < 12) c.awake = true;
@@ -328,8 +329,9 @@ function fire() {
     if (!c.alive) continue;
     const vx = c.x - p.x, vy = c.y - p.y, d = Math.hypot(vx, vy); if (d > bestD || d < 0.05) continue;
     const forward = (vx * p.dirX + vy * p.dirY) / d; if (forward <= 0) continue;
-    const side = Math.abs(vx * p.dirY - vy * p.dirX), halfW = 0.28 * c.t.scale + d * 0.06;
-    if (side <= halfW && (c.t.phasing || lineOfSight(p.x, p.y, c.x, c.y))) { best = c; bestD = d; }
+    // It is a spray bottle, not a rifle: anything within ±26° of the aim line (or overlapping the mist at point-blank) gets wet. Nearest cat wins.
+    const side = Math.abs(vx * p.dirY - vy * p.dirX), inCone = side / d <= 0.44 || side <= 0.45 * c.t.scale + (d < 1.3 ? 0.4 : 0);
+    if (inCone && (c.t.phasing || lineOfSight(p.x, p.y, c.x, c.y))) { best = c; bestD = d; }
   }
   if (best) {
     if (!best.t.boss && !(best.status && best.status.kind === 'boxed')) { const kx = best.x - p.x, ky = best.y - p.y, kd = Math.hypot(kx, ky) || 1; if (best.t.phasing) { best.x += kx / kd * 0.25; best.y += ky / kd * 0.25; } else moveWithSlide(best, kx / kd * 0.25, ky / kd * 0.25, 0.2); }
@@ -346,6 +348,11 @@ function computeDist() {
   G.dist = D;
 }
 function chase(c, dt, speed, toward = 1, target) {
+  const p0x = c.x, p0y = c.y;
+  chaseInner(c, dt, speed, toward, target);
+  if (toward > 0 && !target && !c.t.phasing) { if (Math.hypot(c.x - p0x, c.y - p0y) < 0.004) { c.stuckT = (c.stuckT || 0) + dt; if (c.stuckT > 0.4) { const a = c.phase + G.t; for (const [dx, dy] of [[Math.cos(a), Math.sin(a)], [-Math.sin(a), Math.cos(a)], [-Math.cos(a), -Math.sin(a)]]) if (canStand(c.x + dx * 0.35, c.y + dy * 0.35, 0.2)) { c.x += dx * speed * dt * 1.5; c.y += dy * speed * dt * 1.5; break; } } } else c.stuckT = 0; }
+}
+function chaseInner(c, dt, speed, toward = 1, target) {
   const p = target || G.player, dd = target ? (Math.hypot(p.x - c.x, p.y - c.y) || 1) : c.dist, vx = (p.x - c.x) / dd * toward, vy = (p.y - c.y) / dd * toward;
   let sx = vx, sy = vy;
   if (c.t.phasing) { c.x = Math.max(0.5, Math.min(MW - 0.5, c.x + sx * speed * dt)); c.y = Math.max(0.5, Math.min(MH - 0.5, c.y + sy * speed * dt)); return; }
@@ -379,6 +386,7 @@ function updateCat(c, dt) {
   if (c.hit > 0) c.hit -= dt; if (c.splash > 0) c.splash -= dt;
   c.hx = c.x - (c.px === undefined ? c.x : c.px); c.hy = c.y - (c.py === undefined ? c.y : c.py); c.px = c.x; c.py = c.y;
   { const cand = catFacing(c); if (cand === c.facing) c.facingT = 0; else { c.facingT = (c.facingT || 0) + dt; if (c.facingT > 0.12 || !c.facing) { c.facing = cand; c.facingT = 0; } } }
+  if (G.introT > 0.4) return;   // grace: nothing moves while the level card is up
   if (!c.awake && c.dist < 7 && (c.t.phasing || lineOfSight(p.x, p.y, c.x, c.y))) { c.awake = true; if (!c.t.silent) SFX.meow(); }
   if (!c.awake) return;
   const speed = c.speed * (G.wailT > 0 ? 1.5 : 1);
@@ -432,13 +440,13 @@ function updateCat(c, dt) {
     }
     default: if (!melee) chase(c, dt, speed);
   }
-  if (melee) { c.attackT -= dt; if (c.attackT <= 0) { c.attackT = 0.9; if (Math.random() < 0.5) SFX.hiss(); if (hurtPlayer(c.t.dmg)) return; } }
-  else c.attackT = Math.min(c.attackT, 0.5);
+  if (melee) { c.attackT -= dt; if (c.attackT <= 0) { c.attackT = 1.1; if (Math.random() < 0.5) SFX.hiss(); if (hurtPlayer(Math.max(1, Math.round(c.t.dmg * G.dmgMul)))) return; } }
+  else c.attackT = Math.max(c.attackT, 0.8);
 }
 function update(dt) {
   const p = G.player;
   if (G.msgTimer > 0) { G.msgTimer -= dt; if (G.msgTimer <= 0) msgEl.classList.remove('show'); }
-  if (G.state !== 'playing') return;
+  if (G.state !== 'playing' || G.paused) return;
   G.t += dt; G.runT += dt; G.levelT += dt;   // run/level clocks only tick while playing — the title and the overlays are free
   const turn = ((on('tr') ? 1 : 0) - (on('tl') ? 1 : 0)) * 2.4 * dt + dragTurn; dragTurn = 0;
   if (turn) rotate(p, turn);
@@ -634,6 +642,7 @@ function render() {
   const boss = G.cats.find(c => c.t.boss && c.alive && c.awake);
   if (boss) { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(60, 6, 200, 10); ctx.fillStyle = boss.enraged ? '#ff3030' : '#d4a017'; ctx.fillRect(62, 8, 196 * Math.max(0, boss.hp / boss.maxHp), 6); ctx.fillStyle = '#fff'; ctx.font = 'bold 7px monospace'; ctx.fillText(boss.t.name, 62, 24); }
   if (G.levelFlash > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, G.levelFlash).toFixed(2) + ')'; ctx.fillRect(0, 0, W, H); }
+  if (G.paused) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; ctx.fillText('PAUSED', W / 2, H / 2 - 4); ctx.font = '8px monospace'; ctx.fillText('P / ESC or the PAUSE button to resume', W / 2, H / 2 + 12); ctx.textAlign = 'left'; }
   if (G.introT > 0) {
     const a = Math.min(1, G.introT); ctx.fillStyle = 'rgba(0,0,0,' + (0.7 * a).toFixed(2) + ')'; ctx.fillRect(0, 60, W, G.lastCard ? 88 : 74);
     ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.fillStyle = '#ff5a2b'; ctx.font = 'bold 10px monospace'; ctx.fillText('LEVEL ' + G.level, W / 2, 76);
@@ -687,23 +696,26 @@ document.querySelectorAll('.btn').forEach(bindButton);
 // Strafe with Q/E, or hold Shift with a turn key. Space / F / Ctrl spray. 1–4 use tools.
 const KEYS = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'tl', ArrowLeft: 'tl', KeyD: 'tr', ArrowRight: 'tr', KeyQ: 'sl', KeyE: 'sr', Space: 'fire', ControlLeft: 'fire', ControlRight: 'fire', KeyF: 'fire' };
 const STRAFE_OF = { tl: 'sl', tr: 'sr' }, heldKeys = {}, keyDownAt = {};
-const KEY_BY_KEY = { w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', q: 'KeyQ', e: 'KeyE', f: 'KeyF', ' ': 'Space', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', Enter: 'Enter', '1': 'Digit1', '2': 'Digit2', '3': 'Digit3', '4': 'Digit4', '5': 'Digit5', '6': 'Digit6', '7': 'Digit7' };
+const KEY_BY_KEY = { p: 'KeyP', Escape: 'Escape', w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', q: 'KeyQ', e: 'KeyE', f: 'KeyF', ' ': 'Space', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', Enter: 'Enter', '1': 'Digit1', '2': 'Digit2', '3': 'Digit3', '4': 'Digit4', '5': 'Digit5', '6': 'Digit6', '7': 'Digit7' };
 const keyCode = e => e.code || KEY_BY_KEY[e.key] || KEY_BY_KEY[(e.key || '').toLowerCase()] || '';
 window.addEventListener('keydown', e => {
   const code = keyCode(e); let a = KEYS[code];
   if (a) { if (e.shiftKey && STRAFE_OF[a]) a = STRAFE_OF[a]; if (heldKeys[code] && heldKeys[code] !== a) input[heldKeys[code]] = false; if (!heldKeys[code]) keyDownAt[code] = G.t; heldKeys[code] = a; input[a] = true; if (a === 'fire' && !e.repeat && G.state === 'playing') fire(); e.preventDefault(); }
   for (const k in TOOLS) if (code === TOOLS[k].key && !e.repeat) useTool(k);
   if (code === 'Enter' && G.state !== 'playing') start(startLevel);
+  if ((code === 'KeyP' || code === 'Escape') && !e.repeat && G.state === 'playing') togglePause();
 });
 window.addEventListener('keyup', e => { const code = keyCode(e), a = heldKeys[code] || KEYS[code]; if (a) { input[a] = false; if (a !== 'fire') { const held = G.t - (keyDownAt[code] || G.t); if (held < 0.15) tapLeft[a] = Math.min(0.6, tapLeft[a] + 0.15 - held); } delete heldKeys[code]; e.preventDefault(); } });
 let dragging = false, lastX = 0;
 $('stage').addEventListener('pointerdown', e => { if (e.target.closest('#overlay')) return; dragging = true; lastX = e.clientX; audio(); });
 window.addEventListener('pointermove', e => { if (!dragging) return; dragTurn += (e.clientX - lastX) * 0.006; lastX = e.clientX; });
 window.addEventListener('pointerup', () => dragging = false); window.addEventListener('pointercancel', () => dragging = false);
+function togglePause(force) { G.paused = force === undefined ? !G.paused : !!force; $('pausebtn').classList.toggle('on', G.paused); $('pausebtn').textContent = G.paused ? 'RESUME' : 'PAUSE'; for (const k in input) input[k] = false; if (AUD()) try { AUD().setMuted(muted || G.paused); } catch (e) {} }
+$('pausebtn').addEventListener('click', () => { if (G.state === 'playing') togglePause(); });
 $('mapbtn').addEventListener('click', () => { G.showMap = !G.showMap; $('mapbtn').classList.toggle('on', G.showMap); }); $('mapbtn').classList.add('on');
 $('mutebtn').addEventListener('click', () => { muted = !muted; $('mutebtn').classList.toggle('on', !muted); $('mutebtn').textContent = muted ? 'MUTED' : 'SOUND'; if (AUD()) try { AUD().setMuted(muted); } catch (e) {} }); $('mutebtn').classList.add('on');
 const startLevel = Math.max(1, Math.min(LAST_LEVEL, parseInt(new URLSearchParams(location.search).get('level') || '1', 10) || 1));
-function start(level) { reset(level || startLevel); G.state = 'playing'; $('overlay').hidden = true; const a = audio(); if (AUD()) try { AUD().start(a, muted); } catch (e) { console.warn(e); } }
+function start(level) { reset(level || startLevel); G.paused = false; $('pausebtn').classList.remove('on'); $('pausebtn').textContent = 'PAUSE'; G.state = 'playing'; $('overlay').hidden = true; const a = audio(); if (AUD()) try { AUD().start(a, muted); } catch (e) { console.warn(e); } }
 $('startbtn').addEventListener('click', () => start(startLevel));
 $('contbtn').addEventListener('click', () => start(parseInt($('contbtn').dataset.level, 10) || 1));
 $('copybtn').addEventListener('click', copyResult);
@@ -722,7 +734,7 @@ window.addEventListener('load', () => { reset(startLevel); requestAnimationFrame
 window.CatDoom = {
   registerLevel, LEVELS, CAT_TYPES, LAST_LEVEL,
   get state() { return G.state; }, get level() { return G.level; }, get levelName() { return G.levelName; }, get cleared() { return G.cleared; }, get exit() { return G.exit; }, get player() { return G.player; }, get cats() { return G.cats; }, get shots() { return G.shots; }, get items() { return G.items; }, get throws() { return G.throws; }, get tools() { return G.tools; }, useTool, TOOLS, get triggers() { return G.triggers; }, get input() { return input; }, get kills() { return G.kills; }, get fps() { return fps; }, get procedural() { return G.procedural; },
-  get shareText() { return shareText(); }, get lastCard() { return G.lastCard; }, get runT() { return G.runT; }, get levelT() { return G.levelT; }, get shake() { return G.shake; },
+  get shareText() { return shareText(); }, get lastCard() { return G.lastCard; }, get runT() { return G.runT; }, get levelT() { return G.levelT; }, get paused() { return G.paused; }, pause: togglePause, get shake() { return G.shake; },
   wall: (x, y) => wallAt(x, y), start, fire,
   cheat: !DEBUG ? undefined : { get pickups() { return G.pickups; }, tick(dt) { update(dt); render(); renderHud(); }, snapshot() { return cv.toDataURL('image/png'); }, napAll() { for (const c of G.cats) if (c.alive) { c.alive = false; G.kills++; G.totalKills++; } }, warp(n) { if (!G.player) reset(n); else loadLevel(n); }, spawn: spawnCat },
 };

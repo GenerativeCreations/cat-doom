@@ -2,6 +2,7 @@
 // between them; every aisle row is open end to end so a tuxedo can be circled instead of shoved past.
 CatDoom.registerLevel({
   n: 3,
+  difficulty: { dmg: 0.9 },   // onboarding: cats hit softer in the first rooms
   name: 'The Laundry Room',
   subtitle: 'The dryer is still warm. Nothing has been washed in weeks.',
   theme: { walls: ['wallpaper', 'metal', 'wood'], border: 'wood', sky: '#4a3524', floor: '#5d4632', fog: 0.15 },

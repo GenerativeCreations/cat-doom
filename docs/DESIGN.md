@@ -235,3 +235,23 @@ level select, per-level results line on the intro card, COPY RESULT share text, 
 
 **Then:** difficulty tuned by actually playing through the browser controls (levels 10–12 first), and the
 public repo gets a validator workflow (`.github/workflows/validate.yml`).
+
+## 10. Tuning pass from hands-on play (2026-09-02)
+
+Played through the browser pane with real key/button inputs (pause between decisions; see
+`tools/play-helpers.js`). Full notes in the session log; what changed:
+
+- **Spray cone** was ±9° at two tiles; pincer pairs sat at 25–30° and whole bursts missed. Now ±26° (plus
+  body-width at point-blank), nearest cat first. Held fire 3.5/s → 2.9/s (taps still fire instantly).
+- **Grace period:** nothing wakes or moves while the level card is up (~2.8 s). L10 used to land its first
+  swipe during the card.
+- **Melee wind-up:** 0.8 s before a cat's first swipe after reaching you, 1.1 s cadence (was ≤0.5 s / 0.9 s).
+- **Boss timers:** Matriarch's first kitten call at 12 s, Bastet's first summon at 14 s (both were 5 s, so
+  the designed "boss alone" openings never happened).
+- **Per-level knobs:** `difficulty: { dmg, speed }` in a level file. L1 dmg ×0.6, L2 ×0.8, L3 ×0.9.
+- **Stuck fallback:** a chaser that hasn't moved for 0.4 s nudges around the obstacle.
+- **Pause** (P / Esc / HUD button), needed for phones and for testing.
+
+Still open after this pass: water economy on L10–L12 is fine on paper with ≥55% accuracy and the wider cone
+should deliver that, but a full human clear of L10–L12 has not been played; bowls hidden in alcoves
+(L10) are easy to miss.

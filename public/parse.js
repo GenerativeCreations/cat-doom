@@ -66,7 +66,9 @@
     triggers.filter(t => t.when !== 'kills').forEach(t => { avail += t.spawn.length; });
     triggers.filter(t => t.when === 'kills').sort((a, b) => a.count - b.count).forEach(t => { if (t.count > avail) errors.push('kills trigger count ' + t.count + ' exceeds the ' + avail + ' cats spawnable before it'); avail += t.spawn.length; });
     const awake = (def.awake || []).map(([x, y]) => x + ',' + y);
-    return { n: def.n, name: def.name || ('Level ' + def.n), subtitle: def.subtitle || '', MW, MH, map, start, exit, cats, pickups, triggers, awake, theme, dir: (def.start && def.start.dir) || null, errors, wallAt };
+    const difficulty = Object.assign({ dmg: 1, speed: 1 }, def.difficulty || {});
+    if (!(difficulty.dmg > 0 && difficulty.dmg <= 2) || !(difficulty.speed > 0 && difficulty.speed <= 2)) errors.push('difficulty.dmg / difficulty.speed must be in (0, 2]');
+    return { n: def.n, name: def.name || ('Level ' + def.n), subtitle: def.subtitle || '', MW, MH, map, start, exit, cats, pickups, triggers, awake, theme, difficulty, dir: (def.start && def.start.dir) || null, errors, wallAt };
   }
 
   // BFS over floor cells from start. Returns the set of reachable "x,y" keys; the exit is reachable if adjacent.
