@@ -6,7 +6,7 @@ const W = 320, H = 200, TEX = 64, FOV_PLANE = 0.66, LAST_LEVEL = 12;
 const EXIT_ID = P.EXIT_ID, BORDER_ID = P.BORDER_ID, DOOR_ID = P.DOOR_ID, SECRET_ID = P.SECRET_WALL_ID;
 // pain chance (%): how often a spray hit makes a cat flinch (stops moving and attacking for a beat, resets its swipe)
 const PAIN = { kitten: 90, zoomie: 80, tabby: 70, void: 60, hurler: 60, sphynx: 50, ghost: 50, tuxedo: 40, wailer: 35, chonk: 15, matriarch: 8, bastet: 5 };
-const SKILLS = { kitten: { label: 'KITTEN', dmg: 0.6, speed: 1, water: 90, grace: true, blurb: 'soft paws' }, cat: { label: 'CAT', dmg: 1, speed: 1, water: 60, grace: true, blurb: 'as designed' }, lion: { label: 'LION', dmg: 1.4, speed: 1.15, water: 60, grace: false, blurb: 'no mercy, no grace period' } };
+const SKILLS = { kitten: { label: 'KITTEN', dmg: 0.6, speed: 1, water: 90, grace: true, blurb: 'soft paws' }, cat: { label: 'CAT', dmg: 1, speed: 1, water: 60, grace: true, blurb: 'as designed' }, lion: { label: 'LION', dmg: 1.4, speed: 1.15, water: 60, grace: false, blurb: 'no mercy' } };
 const $ = id => document.getElementById(id);
 
 // ---------- cat types ----------
