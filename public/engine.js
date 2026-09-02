@@ -476,6 +476,7 @@ function victory() {
 // ---------- render ----------
 const cv = $('view'), ctx = cv.getContext('2d');
 ctx.imageSmoothingEnabled = false;
+const sbuf = document.createElement('canvas'); sbuf.width = W; sbuf.height = H; const sctx = sbuf.getContext('2d'); sctx.imageSmoothingEnabled = false;
 function render() {
   const p = G.player, fogK = 13 * (1 - 0.85 * G.fog);
   let gr = ctx.createLinearGradient(0, 0, 0, H / 2); gr.addColorStop(0, G.sky); gr.addColorStop(1, '#0d0a0c'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H / 2);
@@ -517,11 +518,19 @@ function render() {
     const top = H / 2 + fullH / 2 - sh - s.bob - s.z * fullH;
     const x0 = Math.floor(screenX - sw / 2), x1 = Math.ceil(screenX + sw / 2);
     if (x1 < 0 || x0 >= W) continue;
-    if (s.alpha < 1) ctx.globalAlpha = s.alpha * (0.7 + 0.3 * Math.sin(G.t * 6 + s.x));
-    for (let x = Math.max(0, x0); x < Math.min(W, x1); x++) { if (ty >= zb[x]) continue; const texX = Math.min(TEX - 1, ((x - x0) / sw * TEX) | 0); ctx.drawImage(s.img, texX, 0, 1, TEX, x, top, 1, sh); }
-    ctx.globalAlpha = 1;
+    // Draw the visible columns into a scratch buffer, shade only those pixels, then composite. Shading on the
+    // main canvas would darken the wall inside the sprite's box too and reveal cats behind walls.
+    const rx0 = Math.max(0, x0), rx1 = Math.min(W, x1), ry0 = Math.max(0, Math.floor(top)), ry1 = Math.min(H, Math.ceil(top + sh));
+    if (rx1 <= rx0 || ry1 <= ry0) continue;
+    sctx.clearRect(rx0, ry0, rx1 - rx0, ry1 - ry0);
+    let drew = false;
+    for (let x = rx0; x < rx1; x++) { if (ty >= zb[x]) continue; const texX = Math.min(TEX - 1, ((x - x0) / sw * TEX) | 0); sctx.drawImage(s.img, texX, 0, 1, TEX, x, top, 1, sh); drew = true; }
+    if (!drew) continue;
     const dark = Math.min(0.85, ty / fogK);
-    if (dark > 0.05) { ctx.save(); ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(0,0,0,' + dark.toFixed(2) + ')'; ctx.fillRect(Math.max(0, x0), top, Math.min(W, x1) - Math.max(0, x0), sh); ctx.restore(); }
+    if (dark > 0.05) { sctx.save(); sctx.globalCompositeOperation = 'source-atop'; sctx.fillStyle = 'rgba(0,0,0,' + dark.toFixed(2) + ')'; sctx.fillRect(rx0, ry0, rx1 - rx0, ry1 - ry0); sctx.restore(); }
+    if (s.alpha < 1) ctx.globalAlpha = s.alpha * (0.7 + 0.3 * Math.sin(G.t * 6 + s.x));
+    ctx.drawImage(sbuf, rx0, ry0, rx1 - rx0, ry1 - ry0, rx0, ry0, rx1 - rx0, ry1 - ry0);
+    ctx.globalAlpha = 1;
   }
   // weapon
   const bobX = Math.sin(G.walkBob) * 5, bobY = Math.abs(Math.cos(G.walkBob)) * 4 + G.recoil * 14;
@@ -587,9 +596,16 @@ function bindButton(b) {
   b.addEventListener('contextmenu', e => e.preventDefault());
 }
 document.querySelectorAll('.btn').forEach(bindButton);
-const KEYS = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'sl', KeyD: 'sr', KeyQ: 'tl', ArrowLeft: 'tl', KeyE: 'tr', ArrowRight: 'tr', Space: 'fire', ControlLeft: 'fire', KeyF: 'fire' };
-window.addEventListener('keydown', e => { const a = KEYS[e.code]; if (a) { input[a] = true; e.preventDefault(); } for (const k in TOOLS) if (e.code === TOOLS[k].key && !e.repeat) useTool(k); if (e.code === 'Enter' && G.state !== 'playing') start(); });
-window.addEventListener('keyup', e => { const a = KEYS[e.code]; if (a) { input[a] = false; e.preventDefault(); } });
+// WASD and the arrow keys are interchangeable: W/Up forward, S/Down back, A/Left turn, D/Right turn.
+// Strafe with Q/E, or hold Shift with a turn key. Space / F / Ctrl spray. 1–4 use tools.
+const KEYS = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'tl', ArrowLeft: 'tl', KeyD: 'tr', ArrowRight: 'tr', KeyQ: 'sl', KeyE: 'sr', Space: 'fire', ControlLeft: 'fire', ControlRight: 'fire', KeyF: 'fire' };
+const STRAFE_OF = { tl: 'sl', tr: 'sr' }, heldKeys = {};
+window.addEventListener('keydown', e => {
+  let a = KEYS[e.code]; if (a) { if (e.shiftKey && STRAFE_OF[a]) a = STRAFE_OF[a]; if (heldKeys[e.code] && heldKeys[e.code] !== a) input[heldKeys[e.code]] = false; heldKeys[e.code] = a; input[a] = true; e.preventDefault(); }
+  for (const k in TOOLS) if (e.code === TOOLS[k].key && !e.repeat) useTool(k);
+  if (e.code === 'Enter' && G.state !== 'playing') start();
+});
+window.addEventListener('keyup', e => { const a = heldKeys[e.code] || KEYS[e.code]; if (a) { input[a] = false; delete heldKeys[e.code]; e.preventDefault(); } });
 let dragging = false, lastX = 0;
 $('stage').addEventListener('pointerdown', e => { if (e.target.closest('#overlay')) return; dragging = true; lastX = e.clientX; audio(); });
 window.addEventListener('pointermove', e => { if (!dragging) return; dragTurn += (e.clientX - lastX) * 0.006; lastX = e.clientX; });
