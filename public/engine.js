@@ -578,7 +578,7 @@ function showOverlay(kind) {
   const best = Math.min(LAST_LEVEL, loadProgress().best || 1), died = G.level;
   $('overlay').hidden = false;
   const cont = kind === 'title' ? (best > 1 ? best : 0) : (kind === 'lost' && died > 1 ? died : 0);
-  $('contbtn').hidden = !cont; if (cont) { $('contbtn').textContent = 'CONTINUE — LEVEL ' + cont; $('contbtn').dataset.level = cont; }
+  $('contbtn').hidden = !cont; if (cont) { $('contbtn').innerHTML = 'CONTINUE<small>(Level ' + cont + ')</small>'; $('contbtn').dataset.level = cont; }
   $('startbtn').textContent = kind === 'title' ? (cont ? 'NEW GAME' : 'START') : (cont ? 'START OVER' : 'PLAY AGAIN');
   $('ovtext').hidden = kind === 'title'; if (kind === 'title') $('ovsub').textContent = 'Doom, but the demons are cats.';
   buildLevelSelect(kind === 'title' ? best : 0);
