@@ -48,7 +48,7 @@
   .pad.right { justify-self:end; grid-template-columns:repeat(2,64px) 96px; }
   .btn { width:64px; height:64px; border:3px solid var(--edge); border-bottom-width:7px; background:#2c1c1f; color:var(--text); font-size:28px; font-weight:bold; font-family:inherit; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
   .btn { position:relative; }
-  .btn .hint { position:absolute; left:0; right:0; bottom:3px; font-size:9px; line-height:1; letter-spacing:0; opacity:.65; font-weight:bold; pointer-events:none; }
+  .btn .hint { position:absolute; left:0; right:0; bottom:4px; text-align:center; font-size:11px; line-height:1; letter-spacing:0; opacity:.7; font-weight:bold; pointer-events:none; }
   .btn.fire .hint { bottom:6px; }
   .btn.pressed .hint, .btn:active .hint { opacity:.9; }
   .btn.pressed, .btn:active { background:var(--hot); color:#000; border-bottom-width:3px; transform:translateY(4px); }
@@ -95,8 +95,8 @@
     <div id="msg"></div>
     <div id="overlay">
       <h1>CATDOOM</h1>
-      <h2 id="ovsub">The house has been overrun. Only the spray bottle remains.</h2>
-      <p id="ovtext">Move with the pad on the left. Turn and SPRAY with the pad on the right. Every cat you spritz goes down for a nap. Nap them all and the EXIT door opens to the next room. Twelve rooms, each with a new and worse cat, ending with the cat goddess herself. Drink water bowls to refill, eat tuna to heal. From room two on you find new tools: catnip, yarn balls, plastic bags, a cardboard box, a laser pointer, the vacuum, and treats. Number keys 1 to 7 use them. Keyboard also works: WASD or arrow keys (either set), Q/E or Shift+turn to strafe, Space sprays, 1–7 use tools.</p>
+      <h2 id="ovsub">Doom, but the demons are cats.</h2>
+      <p id="ovtext" hidden></p>
       <button id="startbtn">START</button>
     <button id="contbtn" hidden>CONTINUE</button>
     <button id="copybtn" hidden>COPY RESULT</button>
@@ -108,18 +108,18 @@
   <div id="tools" hidden></div>
   <div id="controls">
     <div class="pad left">
-      <button class="btn fwd" data-act="fwd" aria-label="forward (W or up arrow)">▲<span class="hint">W ↑</span></button>
-      <button class="btn sl" data-act="sl" aria-label="strafe left (Q)">◀<span class="hint">Q</span></button>
-      <button class="btn back" data-act="back" aria-label="back (S or down arrow)">▼<span class="hint">S ↓</span></button>
-      <button class="btn sr" data-act="sr" aria-label="strafe right (E)">▶<span class="hint">E</span></button>
+      <button class="btn fwd" data-act="fwd" aria-label="forward (W or up arrow)">▲<span class="hint">W</span></button>
+      <button class="btn sl" data-act="sl" aria-label="strafe left (A)">◀<span class="hint">A</span></button>
+      <button class="btn back" data-act="back" aria-label="back (S or down arrow)">▼<span class="hint">S</span></button>
+      <button class="btn sr" data-act="sr" aria-label="strafe right (D)">▶<span class="hint">D</span></button>
     </div>
     <div id="center">MOVE ◀ ▲ ▼ ▶<br>TURN ⟲ ⟳ &nbsp; SPRAY<br>drag the view to look</div>
     <div class="pad right">
-      <button class="btn tl" data-act="tl" aria-label="turn left (A or left arrow)">⟲<span class="hint">A ←</span></button>
-      <button class="btn tr" data-act="tr" aria-label="turn right (D or right arrow)">⟳<span class="hint">D →</span></button>
+      <button class="btn tl" data-act="tl" aria-label="turn left (left arrow)">⟲<span class="hint">←</span></button>
+      <button class="btn tr" data-act="tr" aria-label="turn right (right arrow)">⟳<span class="hint">→</span></button>
       <button class="btn tl2" data-act="tl" aria-label="turn left">TURN L</button>
       <button class="btn tr2" data-act="tr" aria-label="turn right">TURN R</button>
-      <button class="btn fire" data-act="fire" aria-label="spray (space or F)">SPRAY<small>💦</small><span class="hint">SPACE / F</span></button>
+      <button class="btn fire" data-act="fire" aria-label="spray (space or F)">SPRAY<small>💦</small><span class="hint">SPACE</span></button>
     </div>
   </div>
 </div>

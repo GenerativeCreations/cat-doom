@@ -514,6 +514,7 @@ function showOverlay(kind) {
   const cont = kind === 'title' ? (best > 1 ? best : 0) : (kind === 'lost' && died > 1 ? died : 0);
   $('contbtn').hidden = !cont; if (cont) { $('contbtn').textContent = 'CONTINUE — LEVEL ' + cont; $('contbtn').dataset.level = cont; }
   $('startbtn').textContent = kind === 'title' ? (cont ? 'NEW GAME' : 'START') : (cont ? 'START OVER' : 'PLAY AGAIN');
+  $('ovtext').hidden = kind === 'title'; if (kind === 'title') $('ovsub').textContent = 'Doom, but the demons are cats.';
   buildLevelSelect(kind === 'title' ? best : 0);
   const copy = $('copybtn'); copy.hidden = kind === 'title'; copy.textContent = 'COPY RESULT'; copy.disabled = false;
   if (AUD()) try { AUD().stop(); } catch (e) {}
@@ -694,7 +695,8 @@ function bindButton(b) {
 document.querySelectorAll('.btn').forEach(bindButton);
 // WASD and the arrow keys are interchangeable: W/Up forward, S/Down back, A/Left turn, D/Right turn.
 // Strafe with Q/E, or hold Shift with a turn key. Space / F / Ctrl spray. 1–4 use tools.
-const KEYS = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'tl', ArrowLeft: 'tl', KeyD: 'tr', ArrowRight: 'tr', KeyQ: 'sl', KeyE: 'sr', Space: 'fire', ControlLeft: 'fire', ControlRight: 'fire', KeyF: 'fire' };
+// WASD = the move pad (W/S forward-back, A/D strafe). Arrows = move + turn (Shift+arrow strafes). Q/E also turn. Space / F / Ctrl spray. 1–7 tools.
+const KEYS = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'sl', KeyD: 'sr', ArrowLeft: 'tl', ArrowRight: 'tr', KeyQ: 'tl', KeyE: 'tr', Space: 'fire', ControlLeft: 'fire', ControlRight: 'fire', KeyF: 'fire' };
 const STRAFE_OF = { tl: 'sl', tr: 'sr' }, heldKeys = {}, keyDownAt = {};
 const KEY_BY_KEY = { p: 'KeyP', Escape: 'Escape', w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', q: 'KeyQ', e: 'KeyE', f: 'KeyF', ' ': 'Space', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', Enter: 'Enter', '1': 'Digit1', '2': 'Digit2', '3': 'Digit3', '4': 'Digit4', '5': 'Digit5', '6': 'Digit6', '7': 'Digit7' };
 const keyCode = e => e.code || KEY_BY_KEY[e.key] || KEY_BY_KEY[(e.key || '').toLowerCase()] || '';
