@@ -52,4 +52,4 @@ leaderboard, so they affect only your own session.
 
 Left pad moves and strafes, right pad turns, SPRAY sprays. Drag the view to look. Keyboard: WASD or the arrow keys
 (interchangeable: W/Up forward, S/Down back, A/Left and D/Right turn), Q/E or Shift+turn to strafe, Space sprays,
-1–4 use tools (catnip, yarn ball, plastic bag, cardboard box).
+1–7 use tools (catnip, yarn ball, plastic bag, cardboard box, laser pointer, vacuum, treats).

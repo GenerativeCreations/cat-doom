@@ -48,8 +48,11 @@ when you spray within 12. Bosses are awake from the start.
 | L3 | **Yarn ball** | 2 | 3 / +2 / 6 | Thrown grenade. Cats within 2.2 tiles of the landing spot take 30 and are **tangled** (frozen) for 5 s. |
 | L4 | **Plastic bag** | 3 | 2 / +1 / 5 | Thrown lure. Cats within 5 tiles come; the first one in is **bagged** for 8 s — runs blind, can't attack, takes double damage. |
 | L5 | **Cardboard box** | 4 | 2 / +1 / 4 | Dropped in front of you, lasts 25 s. The first three cats within a tile climb in and sit **boxed** for 10 s, double damage. |
+| L6 | **Laser pointer** | 5 | 3 / +2 / 6 | Not thrown: a red dot lands where you aim (up to 8 tiles). Cats within 7 tiles that can see it chase it at 1.3× and sit **dazed** on it for the dot's 6 s. |
+| L8 | **Vacuum cleaner** | 6 | 2 / +1 / 4 | Not thrown: every cat within 4 tiles that can see you is **scared** for 4 s (flees at 1.5×, can't attack). Screen shake (off with FLASH OFF). Ghosts have no ears. |
+| L10 | **Treats** | 7 | 2 / +1 / 4 | Thrown lure (8 s). Cats within 3 tiles come; an arrival is **eating** for 6 s (sits, double damage) and is **calmed** afterwards: it forgets you until it sees you again. |
 
-Bosses are immune to daze/bag/box (yarn still damages them). Ghosts can't be boxed. Each level grants the
+Bosses are immune to daze/bag/box/laser/vacuum/treats (yarn still damages them). Laser and vacuum skip cats that already carry a status so tools combine instead of cancelling. Ghosts can't be boxed. Each level grants the
 starting stash for every unlocked tool and the engine auto-places ammo drops (2 per tool, 1 for boxes) on
 reachable floor if the level file has none; authors may place them with `N` catnip, `Y` yarn, `P` bag, `O` box.
 On-screen: a tool row above the pads, one tap each. The level that unlocks a tool shows its blurb after
@@ -211,3 +214,24 @@ Deviations the workers chose, kept on integration:
   play. L12 water budget (worker: raise the two `water:` triggers 25→40 if it plays dry) and L10 wave 4
   (currently no refill) are the two knobs most likely to move.
 - **Engine additions since §5:** toolbelt (§2b), the completability guards, `?level=N`, tool row UI.
+
+## 9. Improvement wave (2026-09-02)
+
+Chosen after the first live deployment, from a scripted-play review; implemented in this order.
+
+**Engine core (Fable seat):** continue from the highest level reached (localStorage, CONTINUE button on the
+title and on death) · exit guidance once a level is clear (green marker over the door in view, edge arrow
+otherwise) · yarn balls detonate on first cat contact · flashlight cone (the centre of the view stays brighter
+in dark levels, fog ≥ 0.3) · cat pathing by a BFS distance field from the player (refreshed on cell change /
+0.3 s) instead of wall-hugging · spray feedback (cyan hit marker, splash sprite on the cat) · reduced-flash
+option (FLASH button: vignette instead of full-screen hurt flash, no wail tint) · minimap pickups drawn as
+crosses · debug cheats only on localhost or `?debug=1` · engine split: `sprites.js` (cat art, facings) and
+`audio.js` (soundtrack) with fixed APIs so they can be built independently.
+
+**Workers:** ambient soundtrack per theme (`audio.js`, WebAudio only) · directional cat sprites
+(front/left/right/back per type, `sprites.js`) · three more tools (laser pointer L6, vacuum L8, treats L10),
+level select, per-level results line on the intro card, COPY RESULT share text, mobile portrait layout
+(`engine.js` + `index.html`).
+
+**Then:** difficulty tuned by actually playing through the browser controls (levels 10–12 first), and the
+public repo gets a validator workflow (`.github/workflows/validate.yml`).

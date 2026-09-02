@@ -1,0 +1,22 @@
+name: validate
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  levels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Syntax-check shipped scripts
+        run: for f in public/*.js public/levels/*.js server.js worker.js; do node --check "$f"; done
+      - name: Validate every level file
+        run: node tools/validate-levels.js
+      - name: Static server smoke test
+        run: |
+          HOST=127.0.0.1 PORT=5348 node server.js & sleep 1
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5348/)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5348/server.js)" = 404
+          curl -sI http://127.0.0.1:5348/ | grep -qi content-security-policy
