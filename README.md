@@ -5,6 +5,14 @@ Play it at **https://cat-doom.com**. Source is MIT-licensed; every sprite and te
 Doom, but the demons are cats. A browser raycaster with all controls on screen (touch, mouse, keyboard),
 twelve hand-authored levels, a spray bottle, and a toolbelt that grows every level.
 
+## Parody notice
+
+CatDoom is a fan-made parody. It is not affiliated with, endorsed by, or connected to id Software, Bethesda
+Softworks, or ZeniMax Media. "DOOM" is their trademark; this project uses the name only as parody and
+homage. Every sprite, texture and sound here is drawn or synthesised in code; nothing is taken from any
+Doom game. The author does not sell, monetise, or run advertising on this game, and does not intend to.
+The MIT licence below covers this project's code only; it grants no rights to the DOOM name or marks.
+
 ## Security notes
 
 `server.js` serves only `.html/.js/.css/.png/.ico/.txt` files, refuses dotfiles, `tools/`, and its own config, and sends a strict Content-Security-Policy (no inline scripts, no outbound connections). The game makes no network requests, sets no cookies, and stores nothing. Debug hooks on `window.CatDoom.cheat` exist for testing; there is no leaderboard, so they affect only your own session.
@@ -45,7 +53,7 @@ leaderboard, so they affect only your own session.
 - `public/engine.js` — raycaster, cats, tools, triggers, level flow.
 - `public/parse.js` — level legend parser shared by the engine and the validator.
 - `public/levels/levelNN.js` — one data file per level (see [docs/DESIGN.md](docs/DESIGN.md) for the design and schema).
-- `tools/validate-levels.js` — `node tools/validate-levels.js [N ...]` checks every level headlessly.
+- `tools/validate-levels.js` — `node tools/validate-levels.js [N ...]` checks every level headlessly (also runs in CI).
 - `server.js`, `railway.json`, `wrangler.jsonc` — hosting.
 
 ## Controls
