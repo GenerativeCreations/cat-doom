@@ -2,7 +2,10 @@
 (() => {
 'use strict';
 const P = window.CatDoomParse;
-const W = 320, H = 200, TEX = 64, FOV_PLANE = 0.66, LAST_LEVEL = 12;
+const W = 320, TEX = 64; let H = 200;   // H grows on portrait phones so the view fills the screen (same horizontal FOV, taller frame)
+const PORTRAIT_H = 336, PH = 200;   // PH: projection height — wall and sprite sizes are computed from this, not from the frame height, so a taller frame shows more floor/ceiling instead of stretching the world
+const portraitPhone = () => window.matchMedia('(orientation: portrait) and (max-width: 640px)').matches;
+const FOV_PLANE = 0.66, LAST_LEVEL = 12;
 const EXIT_ID = P.EXIT_ID, BORDER_ID = P.BORDER_ID, DOOR_ID = P.DOOR_ID, SECRET_ID = P.SECRET_WALL_ID;
 // pain chance (%): how often a spray hit makes a cat flinch (stops moving and attacking for a beat, resets its swipe)
 const PAIN = { kitten: 90, zoomie: 80, tabby: 70, void: 60, hurler: 60, sphynx: 50, ghost: 50, tuxedo: 40, wailer: 35, chonk: 15, matriarch: 8, bastet: 5 };
@@ -582,7 +585,7 @@ function showOverlay(kind) {
   $('startbtn').textContent = kind === 'title' ? (cont ? 'NEW GAME' : 'START') : (cont ? 'START OVER' : 'PLAY AGAIN');
   $('ovtext').hidden = kind === 'title'; if (kind === 'title') $('ovsub').textContent = 'Doom, but the demons are cats.';
   buildLevelSelect(kind === 'title' ? best : 0);
-  document.body.classList.toggle('title', kind === 'title');
+  document.body.classList.toggle('title', kind === 'title'); requestAnimationFrame(fitView);
   $('skillwrap').hidden = kind !== 'title'; for (const b of document.querySelectorAll('#skillsel button')) b.classList.toggle('on', b.dataset.skill === G.skill);
   $('roomwrap').hidden = !(kind === 'title' && best > 1); $('levelsel').hidden = true; $('roomtoggle').classList.remove('open'); $('roomtoggle').textContent = 'START FROM AN EARLIER ROOM ▾';
   const copy = $('copybtn'); copy.hidden = kind === 'title'; copy.textContent = 'COPY RESULT'; copy.disabled = false;
@@ -624,6 +627,14 @@ const STATUS_ICON = { tangled: 'yarn', bagged: 'bag', boxed: 'box', dazed: 'catn
 const cv = $('view'), ctx = cv.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 const sbuf = document.createElement('canvas'); sbuf.width = W; sbuf.height = H; const sctx = sbuf.getContext('2d'); sctx.imageSmoothingEnabled = false;
+function fitView() {
+  // phones in portrait: match the render frame to the stage's proportions so the view fills it (horizontal FOV unchanged, taller frame). Otherwise the classic 320x200.
+  let nh = 200;
+  if (portraitPhone()) { const st = $('stage').getBoundingClientRect(); if (st.width > 0) nh = Math.max(200, Math.min(640, Math.round(W * st.height / st.width))); else nh = PORTRAIT_H; }
+  if (nh === H && cv.height === nh) return;
+  H = nh; cv.height = H; sbuf.height = H; ctx.imageSmoothingEnabled = false; sctx.imageSmoothingEnabled = false;
+}
+window.addEventListener('resize', fitView); window.addEventListener('orientationchange', fitView); fitView();
 function render() {
   const p = G.player, fogK = 13 * (1 - 0.85 * G.fog), lamp = G.fog >= 0.3 ? 0.6 : 0.2;
   // vacuum kick: shove the whole frame ±2 px for 0.4 s (never when reduced flash is on — G.shake is only ever set then)
@@ -644,7 +655,7 @@ function render() {
     while (!hit && guard++ < 128) { if (sdX < sdY) { sdX += dX; mapX += stepX; side = 0; } else { sdY += dY; mapY += stepY; side = 1; } hit = wallAt(mapX, mapY); }
     const perp = side === 0 ? sdX - dX : sdY - dY;
     zb[x] = perp;
-    const lineH = H / perp, top = H / 2 - lineH / 2;
+    const lineH = PH / perp, top = H / 2 - lineH / 2;
     let wallX = side === 0 ? p.y + perp * rdy : p.x + perp * rdx; wallX -= Math.floor(wallX);
     let texX = (wallX * TEX) | 0; if ((side === 0 && rdx < 0) || (side === 1 && rdy > 0)) texX = TEX - 1 - texX;
     ctx.drawImage(hit === EXIT_ID ? (G.cleared ? texExitOpen : texExit) : hit === DOOR_ID ? (G.hasKey ? texDoorOpen : texDoor) : (WALLTEX[hit] || TEXTURES.stone), texX, 0, 1, TEX, x, top, 1, lineH);
@@ -670,7 +681,7 @@ function render() {
     const sx = s.x - p.x, sy = s.y - p.y;
     const tx = invDet * (p.dirY * sx - p.dirX * sy), ty = invDet * (-p.planeY * sx + p.planeX * sy);
     if (ty <= 0.15) continue;
-    const screenX = (W / 2) * (1 + tx / ty), fullH = H / ty, sh = fullH * s.scale, sw = sh;
+    const screenX = (W / 2) * (1 + tx / ty), fullH = PH / ty, sh = fullH * s.scale, sw = sh;
     const top = H / 2 + fullH / 2 - sh - s.bob - s.z * fullH;
     const x0 = Math.floor(screenX - sw / 2), x1 = Math.ceil(screenX + sw / 2);
     if (x1 < 0 || x0 >= W) continue;
@@ -719,15 +730,15 @@ function render() {
   if (G.levelFlash > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, G.levelFlash).toFixed(2) + ')'; ctx.fillRect(0, 0, W, H); }
   if (G.paused) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; ctx.fillText('PAUSED', W / 2, H / 2 - 4); ctx.font = '8px monospace'; ctx.fillText('P / ESC or the PAUSE button to resume', W / 2, H / 2 + 12); ctx.textAlign = 'left'; }
   if (G.introT > 0 && G.state === 'playing') {
-    const a = Math.min(1, G.introT); ctx.fillStyle = 'rgba(0,0,0,' + (0.7 * a).toFixed(2) + ')'; ctx.fillRect(0, 60, W, G.lastCard ? 88 : 74);
-    ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.fillStyle = '#ff5a2b'; ctx.font = 'bold 10px monospace'; ctx.fillText('LEVEL ' + G.level, W / 2, 76);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 18px monospace'; ctx.fillText(G.levelName.toUpperCase(), W / 2, 98);
+    const a = Math.min(1, G.introT), cy = H / 2 - 40; ctx.fillStyle = 'rgba(0,0,0,' + (0.7 * a).toFixed(2) + ')'; ctx.fillRect(0, cy, W, G.lastCard ? 88 : 74);
+    ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.fillStyle = '#ff5a2b'; ctx.font = 'bold 10px monospace'; ctx.fillText('LEVEL ' + G.level, W / 2, cy + 16);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 18px monospace'; ctx.fillText(G.levelName.toUpperCase(), W / 2, cy + 38);
     ctx.fillStyle = '#ddd'; ctx.font = '9px monospace';
     const lines = [], words = G.subtitle.split(' '); let cur = '';
     for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > W - 16 && cur) { lines.push(cur); cur = w; } else cur = t; }
     if (cur) lines.push(cur);
-    const shown = lines.slice(0, 2); shown.forEach((l, i) => ctx.fillText(l, W / 2, 114 + i * 11));
-    if (G.lastCard) { ctx.fillStyle = '#ffd166'; ctx.font = 'bold 9px monospace'; ctx.fillText(G.lastCard, W / 2, 114 + Math.max(1, shown.length) * 11 + 3); }
+    const shown = lines.slice(0, 2); shown.forEach((l, i) => ctx.fillText(l, W / 2, cy + 54 + i * 11));
+    if (G.lastCard) { ctx.fillStyle = '#ffd166'; ctx.font = 'bold 9px monospace'; ctx.fillText(G.lastCard, W / 2, cy + 54 + Math.max(1, shown.length) * 11 + 3); }
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
   if (G.showMap && G.state === 'playing') {
@@ -793,7 +804,7 @@ $('pausebtn').addEventListener('click', () => { if (G.state === 'playing') toggl
 $('mapbtn').addEventListener('click', () => { G.showMap = !G.showMap; $('mapbtn').classList.toggle('on', G.showMap); }); $('mapbtn').classList.add('on');
 $('mutebtn').addEventListener('click', () => { muted = !muted; $('mutebtn').classList.toggle('on', !muted); $('mutebtn').textContent = muted ? 'MUTED' : 'SOUND'; if (AUD()) try { AUD().setMuted(muted); } catch (e) {} }); $('mutebtn').classList.add('on');
 const startLevel = Math.max(1, Math.min(LAST_LEVEL, parseInt(new URLSearchParams(location.search).get('level') || '1', 10) || 1));
-function start(level) { document.body.classList.remove('title'); reset(level || startLevel); G.paused = false; $('pausebtn').classList.remove('on'); $('pausebtn').textContent = 'PAUSE'; G.state = 'playing'; $('overlay').hidden = true; const a = audio(); if (AUD()) try { AUD().start(a, muted); } catch (e) { console.warn(e); } }
+function start(level) { document.body.classList.remove('title'); requestAnimationFrame(fitView); reset(level || startLevel); G.paused = false; $('pausebtn').classList.remove('on'); $('pausebtn').textContent = 'PAUSE'; G.state = 'playing'; $('overlay').hidden = true; const a = audio(); if (AUD()) try { AUD().start(a, muted); } catch (e) { console.warn(e); } }
 $('startbtn').addEventListener('click', () => start(startLevel));
 $('contbtn').addEventListener('click', () => start(parseInt($('contbtn').dataset.level, 10) || 1));
 $('copybtn').addEventListener('click', copyResult);
@@ -809,7 +820,7 @@ window.addEventListener('blur', () => { for (const k in input) input[k] = false;
 
 // ---------- loop ----------
 let last = performance.now(), frames = 0, fps = 0, fpsT = 0;
-function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); render(); renderHud(); frames++; fpsT += dt; if (fpsT >= 1) { fps = frames; frames = 0; fpsT = 0; } requestAnimationFrame(loop); }
+function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); render(); renderHud(); frames++; fpsT += dt; if (fpsT >= 1) { fps = frames; frames = 0; fpsT = 0; fitView(); } requestAnimationFrame(loop); }
 window.addEventListener('load', () => { reset(startLevel); requestAnimationFrame(loop); });
 
 // The public surface level files need. Everything else is the debug seam below, which the publish script strips from the public build.

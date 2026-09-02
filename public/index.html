@@ -84,7 +84,7 @@
     #tools { gap:4px; padding:5px 6px; } .tool { min-width:0; flex:0 1 auto; height:42px; padding:0 7px; gap:4px; } .tool .lbl { display:none; } .tool .ico { font-size:17px; } .tool .cnt { font-size:14px; margin-left:2px; } }
   /* Portrait phone: the view gets the full width at 16:10, everything else shrinks around it and the two pads sit side by side. */
   @media (orientation:portrait) and (max-width:640px) {
-    #stage { flex:1 1 auto; width:100%; aspect-ratio:16 / 10; }   /* aspect-ratio is the base size; grow into any leftover height */
+    #stage { flex:1 1 auto; width:100%; aspect-ratio:auto; }   /* aspect-ratio is the base size; grow into any leftover height */
     canvas#view { width:100%; height:100%; object-fit:contain; }
     #hud { font-size:10px; letter-spacing:0; gap:6px; padding:3px 6px; } #hud .bar { width:52px; height:9px; } #hud .num { min-width:22px; } #hud button { padding:2px 4px; font-size:9px; }
     #tools { gap:3px; padding:4px 4px; } .tool { height:38px; padding:0 5px; border-bottom-width:4px; } .tool .ico { font-size:15px; } .tool .cnt { font-size:13px; } .tool .key { font-size:8px; top:-6px; right:-4px; }
