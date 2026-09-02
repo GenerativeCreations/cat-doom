@@ -4,6 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>CatDoom</title>
+<meta name="description" content="Doom, but the demons are cats. A browser raycaster with a spray bottle, twelve rooms, and a cat goddess at the end. Free, no ads, plays on your phone.">
+<meta name="theme-color" content="#0b0708">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CatDoom">
+<meta property="og:title" content="CatDoom">
+<meta property="og:description" content="Doom, but the demons are cats. Spray your way through twelve rooms of the house. Free, no ads, plays on your phone.">
+<meta property="og:url" content="https://cat-doom.com/">
+<meta property="og:image" content="https://cat-doom.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A pixel-art tabby cat glaring next to the words CATDOOM">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CatDoom">
+<meta name="twitter:description" content="Doom, but the demons are cats. Free browser game, plays on your phone.">
+<meta name="twitter:image" content="https://cat-doom.com/og.png">
 <style>
   :root { --bg:#0b0708; --panel:#1a1012; --edge:#4a2a2e; --hot:#ff5a2b; --hp:#e33; --water:#3ab0ff; --text:#f3e6d8; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -34,6 +52,7 @@
   #overlay #levelsel button { width:40px; height:40px; padding:0; font-size:14px; background:#2c1c1f; color:var(--text); border:2px solid var(--edge); border-bottom-width:4px; }
   #overlay #levelsel button:hover { background:var(--hot); color:#000; }
   #overlay[hidden] { display:none; }
+  #overlay .logo { font-size:clamp(56px,12vw,112px); line-height:1; margin-bottom:-6px; filter:drop-shadow(0 0 18px #ff5a2b66); }
   #overlay h1 { font-size:clamp(64px,18vw,168px); line-height:1; margin:0 0 6px; color:var(--hot); text-shadow:6px 6px 0 #5a1a00, 0 0 40px #ff5a2b88; letter-spacing:6px; }
   #overlay h2 { margin:10px 0 22px; font-size:clamp(22px,4vw,34px); }
   #overlay p { max-width:520px; margin:0; line-height:1.5; opacity:.9; }
@@ -113,6 +132,7 @@
     <canvas id="view" width="320" height="200"></canvas>
     <div id="msg"></div>
     <div id="overlay">
+      <div class="logo" aria-hidden="true">😾</div>
       <h1>CATDOOM</h1>
       <h2 id="ovsub">Doom, but the demons are cats.</h2>
       <p id="ovtext" hidden></p>
