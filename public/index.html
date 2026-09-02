@@ -22,7 +22,16 @@
   canvas#view { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; image-rendering:crisp-edges; display:block; }
   #msg { position:absolute; left:0; right:0; top:8px; text-align:center; font-weight:bold; font-size:16px; text-shadow:0 2px 0 #000; pointer-events:none; opacity:0; transition:opacity .3s; letter-spacing:1px; }
   #msg.show { opacity:1; }
-  #overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(8,4,5,.86); text-align:center; padding:20px; }
+  #overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:rgba(8,4,5,.94); text-align:center; padding:20px; }
+  body.title #hud, body.title #tools, body.title #controls { display:none; }
+  #overlay .ovlabel { font-size:11px; letter-spacing:3px; opacity:.55; margin:18px 0 8px; }
+  #overlay #skillwrap, #overlay #roomwrap { display:flex; flex-direction:column; align-items:center; }
+  #overlay #skillwrap[hidden], #overlay #roomwrap[hidden], #overlay #levelsel[hidden] { display:none; }
+  #overlay .linkbtn { background:none; border:0; color:var(--text); opacity:.6; font-size:11px; letter-spacing:2px; padding:14px 8px 6px; cursor:pointer; }
+  #overlay .linkbtn:hover, #overlay .linkbtn.open { opacity:1; }
+  #overlay #levelsel { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:420px; margin-top:6px; }
+  #overlay #levelsel button { width:40px; height:40px; padding:0; font-size:14px; background:#2c1c1f; color:var(--text); border:2px solid var(--edge); border-bottom-width:4px; }
+  #overlay #levelsel button:hover { background:var(--hot); color:#000; }
   #overlay[hidden] { display:none; }
   #overlay h1 { font-size:clamp(40px,9vw,84px); margin:0; color:var(--hot); text-shadow:4px 4px 0 #5a1a00, 0 0 24px #ff5a2b88; letter-spacing:4px; }
   #overlay h2 { margin:0; font-size:clamp(18px,3vw,26px); }
@@ -105,8 +114,8 @@
       <button id="startbtn">START</button>
     <button id="contbtn" hidden>CONTINUE</button>
     <button id="copybtn" hidden>COPY RESULT</button>
-    <div id="levelsel" hidden></div>
-    <div id="skillsel" hidden></div>
+    <div id="skillwrap" hidden><div class="ovlabel">DIFFICULTY</div><div id="skillsel"></div></div>
+    <div id="roomwrap" hidden><button id="roomtoggle" class="linkbtn">START FROM AN EARLIER ROOM ▾</button><div id="levelsel" hidden></div></div>
     <textarea id="copysink" aria-hidden="true" tabindex="-1"></textarea>
     <p id="promo"></p>
     </div>

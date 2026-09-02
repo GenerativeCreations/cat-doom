@@ -582,16 +582,18 @@ function showOverlay(kind) {
   $('startbtn').textContent = kind === 'title' ? (cont ? 'NEW GAME' : 'START') : (cont ? 'START OVER' : 'PLAY AGAIN');
   $('ovtext').hidden = kind === 'title'; if (kind === 'title') $('ovsub').textContent = 'Doom, but the demons are cats.';
   buildLevelSelect(kind === 'title' ? best : 0);
-  $('skillsel').hidden = kind !== 'title'; for (const b of document.querySelectorAll('#skillsel button')) b.classList.toggle('on', b.dataset.skill === G.skill);
+  document.body.classList.toggle('title', kind === 'title');
+  $('skillwrap').hidden = kind !== 'title'; for (const b of document.querySelectorAll('#skillsel button')) b.classList.toggle('on', b.dataset.skill === G.skill);
+  $('roomwrap').hidden = !(kind === 'title' && best > 1); $('levelsel').hidden = true; $('roomtoggle').classList.remove('open'); $('roomtoggle').textContent = 'START FROM AN EARLIER ROOM ▾';
   const copy = $('copybtn'); copy.hidden = kind === 'title'; copy.textContent = 'COPY RESULT'; copy.disabled = false;
   if (AUD()) try { AUD().stop(); } catch (e) {}
 }
 // Level select: one small button per room you have reached. Title screen only — CONTINUE stays the one-tap path.
 function buildLevelSelect(best) {
-  const row = $('levelsel'); row.textContent = ''; row.hidden = !(best > 1);
+  const row = $('levelsel'); row.textContent = '';
   if (!(best > 1)) return;
   const lv = loadProgress().levels || {};
-  for (let n = 1; n <= best; n++) { const b = document.createElement('button'); b.className = 'lvl'; const r = lv[n]; b.innerHTML = n + (r ? '<small>' + (r.grade || '') + (r.time ? ' ' + mmss(r.time) : '') + (r.secretsTotal ? ' ' + r.secrets + '/' + r.secretsTotal + '$' : '') + '</small>' : ''); b.title = 'Start at level ' + n + (r ? ' — best ' + mmss(r.time) + ', grade ' + r.grade : ''); b.addEventListener('click', () => start(n)); row.appendChild(b); }
+  for (let n = 1; n <= best; n++) { const b = document.createElement('button'); b.className = 'lvl'; const r = lv[n]; b.textContent = n; b.title = 'Start at room ' + n + (r ? ' — best ' + mmss(r.time) + ', grade ' + r.grade + (r.secretsTotal ? ', secrets ' + r.secrets + '/' + r.secretsTotal : '') : ''); b.addEventListener('click', () => start(n)); row.appendChild(b); }
 }
 function copyResult() {
   const text = shareText(), btn = $('copybtn');
@@ -712,11 +714,11 @@ function render() {
     else { const right = etx > 0, x = right ? W - 6 : 6, y = H / 2 - 30; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (right ? -12 : 12), y - 8); ctx.lineTo(x + (right ? -12 : 12), y + 8); ctx.fill(); ctx.font = 'bold 7px monospace'; ctx.textAlign = right ? 'right' : 'left'; ctx.fillText('EXIT', x + (right ? -14 : 14), y + 3); ctx.textAlign = 'left'; }
   }
   // boss bar
-  const boss = G.cats.find(c => c.t.boss && c.alive && c.awake);
+  const boss = G.state === 'playing' && G.cats.find(c => c.t.boss && c.alive && c.awake);
   if (boss) { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(60, 6, 200, 10); ctx.fillStyle = boss.enraged ? '#ff3030' : '#d4a017'; ctx.fillRect(62, 8, 196 * Math.max(0, boss.hp / boss.maxHp), 6); ctx.fillStyle = '#fff'; ctx.font = 'bold 7px monospace'; ctx.fillText(boss.t.name, 62, 24); }
   if (G.levelFlash > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, G.levelFlash).toFixed(2) + ')'; ctx.fillRect(0, 0, W, H); }
   if (G.paused) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#fff'; ctx.font = 'bold 16px monospace'; ctx.textAlign = 'center'; ctx.fillText('PAUSED', W / 2, H / 2 - 4); ctx.font = '8px monospace'; ctx.fillText('P / ESC or the PAUSE button to resume', W / 2, H / 2 + 12); ctx.textAlign = 'left'; }
-  if (G.introT > 0) {
+  if (G.introT > 0 && G.state === 'playing') {
     const a = Math.min(1, G.introT); ctx.fillStyle = 'rgba(0,0,0,' + (0.7 * a).toFixed(2) + ')'; ctx.fillRect(0, 60, W, G.lastCard ? 88 : 74);
     ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.fillStyle = '#ff5a2b'; ctx.font = 'bold 10px monospace'; ctx.fillText('LEVEL ' + G.level, W / 2, 76);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 18px monospace'; ctx.fillText(G.levelName.toUpperCase(), W / 2, 98);
@@ -728,7 +730,7 @@ function render() {
     if (G.lastCard) { ctx.fillStyle = '#ffd166'; ctx.font = 'bold 9px monospace'; ctx.fillText(G.lastCard, W / 2, 114 + Math.max(1, shown.length) * 11 + 3); }
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
-  if (G.showMap) {
+  if (G.showMap && G.state === 'playing') {
     const cs = MW > 22 ? 2 : 3, ox = W - MW * cs - 4, oy = 4;
     ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(ox - 2, oy - 2, MW * cs + 4, MH * cs + 4);
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const w = MAP[y * MW + x]; if (!w) continue; ctx.fillStyle = w === EXIT_ID ? (G.cleared ? '#4dff6a' : '#c33') : w === DOOR_ID ? (G.hasKey ? '#4dff6a' : '#ffd166') : '#8a7a70'; ctx.fillRect(ox + x * cs, oy + y * cs, cs, cs); }
@@ -791,12 +793,13 @@ $('pausebtn').addEventListener('click', () => { if (G.state === 'playing') toggl
 $('mapbtn').addEventListener('click', () => { G.showMap = !G.showMap; $('mapbtn').classList.toggle('on', G.showMap); }); $('mapbtn').classList.add('on');
 $('mutebtn').addEventListener('click', () => { muted = !muted; $('mutebtn').classList.toggle('on', !muted); $('mutebtn').textContent = muted ? 'MUTED' : 'SOUND'; if (AUD()) try { AUD().setMuted(muted); } catch (e) {} }); $('mutebtn').classList.add('on');
 const startLevel = Math.max(1, Math.min(LAST_LEVEL, parseInt(new URLSearchParams(location.search).get('level') || '1', 10) || 1));
-function start(level) { reset(level || startLevel); G.paused = false; $('pausebtn').classList.remove('on'); $('pausebtn').textContent = 'PAUSE'; G.state = 'playing'; $('overlay').hidden = true; const a = audio(); if (AUD()) try { AUD().start(a, muted); } catch (e) { console.warn(e); } }
+function start(level) { document.body.classList.remove('title'); reset(level || startLevel); G.paused = false; $('pausebtn').classList.remove('on'); $('pausebtn').textContent = 'PAUSE'; G.state = 'playing'; $('overlay').hidden = true; const a = audio(); if (AUD()) try { AUD().start(a, muted); } catch (e) { console.warn(e); } }
 $('startbtn').addEventListener('click', () => start(startLevel));
 $('contbtn').addEventListener('click', () => start(parseInt($('contbtn').dataset.level, 10) || 1));
 $('copybtn').addEventListener('click', copyResult);
 try { G.skill = SKILLS[localStorage.getItem('catdoom.skill')] ? localStorage.getItem('catdoom.skill') : 'cat'; } catch (e) {}
 for (const k in SKILLS) { const b = document.createElement('button'); b.dataset.skill = k; b.innerHTML = SKILLS[k].label + '<small>' + SKILLS[k].blurb + '</small>'; b.addEventListener('click', () => { G.skill = k; try { localStorage.setItem('catdoom.skill', k); } catch (e) {} for (const o of document.querySelectorAll('#skillsel button')) o.classList.toggle('on', o.dataset.skill === k); }); $('skillsel').appendChild(b); }
+$('roomtoggle').addEventListener('click', () => { const open = $('levelsel').hidden; $('levelsel').hidden = !open; $('roomtoggle').classList.toggle('open', open); $('roomtoggle').textContent = open ? 'START FROM AN EARLIER ROOM ▴' : 'START FROM AN EARLIER ROOM ▾'; });
 showOverlay('title');
 // reduced-flash option (accessibility): vignette instead of full-screen flashes
 try { G.reducedFx = localStorage.getItem('catdoom.reducedFx') === '1'; } catch (e) {}
