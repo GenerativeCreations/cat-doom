@@ -75,11 +75,10 @@
   .btn.fire small { font-size:11px; opacity:.85; letter-spacing:0; }
   .btn.wide { width:64px; }
   .fwd { grid-column:2; grid-row:1; } .sl { grid-column:1; grid-row:2; } .back { grid-column:2; grid-row:2; } .sr { grid-column:3; grid-row:2; }
-  .tl { grid-column:1; grid-row:1; } .tr { grid-column:2; grid-row:1; }
-  .tl2 { grid-column:1; grid-row:2; } .tr2 { grid-column:2; grid-row:2; }
-  .tl2, .tr2 { font-size:14px; }
+  .tl { grid-column:1; grid-row:1 / span 2; } .tr { grid-column:2; grid-row:1 / span 2; }
+  .tl, .tr { height:134px; font-size:34px; }
   #center { text-align:center; font-size:12px; opacity:.7; line-height:1.5; letter-spacing:1px; }
-  @media (max-width:640px) { #hud { gap:8px; padding:4px 8px; } #hud .stat { gap:4px; } #hud button { padding:3px 6px; font-size:11px; } .pad { grid-template-columns:repeat(3,54px); grid-template-rows:repeat(2,54px); } .pad.right { grid-template-columns:repeat(2,54px) 80px; } .btn { width:54px; height:54px; font-size:22px; } .btn.fire { width:80px; height:114px; font-size:15px; } #center { display:none; } #hud { font-size:12px; } #hud .bar { width:70px; }
+  @media (max-width:640px) { #hud { gap:8px; padding:4px 8px; } #hud .stat { gap:4px; } #hud button { padding:3px 6px; font-size:11px; } .pad { grid-template-columns:repeat(3,54px); grid-template-rows:repeat(2,54px); } .pad.right { grid-template-columns:repeat(2,54px) 80px; } .btn { width:54px; height:54px; font-size:22px; } .btn.fire { width:80px; height:114px; font-size:15px; } .tl, .tr { height:114px; font-size:28px; } #center { display:none; } #hud { font-size:12px; } #hud .bar { width:70px; }
     /* seven tools have to fit one row on a phone: icon + count only, the key badge says which number */
     #tools { gap:4px; padding:5px 6px; } .tool { min-width:0; flex:0 1 auto; height:42px; padding:0 7px; gap:4px; } .tool .lbl { display:none; } .tool .ico { font-size:17px; } .tool .cnt { font-size:14px; margin-left:2px; } }
   /* Portrait phone: the view gets the full width at 16:10, everything else shrinks around it and the two pads sit side by side. */
@@ -92,7 +91,7 @@
     .pad { grid-template-columns:repeat(3,52px); grid-template-rows:repeat(2,52px); gap:4px; }
     .pad.right { grid-template-columns:repeat(2,52px) 66px; }
     .btn { width:52px; height:52px; font-size:21px; border-bottom-width:6px; }
-    .btn.fire { width:66px; height:108px; font-size:12px; letter-spacing:0; } .btn.fire small { font-size:10px; }
+    .btn.fire { width:66px; height:108px; font-size:12px; letter-spacing:0; } .tl, .tr { height:108px; font-size:26px; } .btn.fire small { font-size:10px; }
   }
 </style>
 </head>
@@ -137,8 +136,6 @@
     <div class="pad right">
       <button class="btn tl" data-act="tl" aria-label="turn left (A or left arrow)">⟲<span class="hint">A</span></button>
       <button class="btn tr" data-act="tr" aria-label="turn right (D or right arrow)">⟳<span class="hint">D</span></button>
-      <button class="btn tl2" data-act="tl" aria-label="turn left">TURN L</button>
-      <button class="btn tr2" data-act="tr" aria-label="turn right">TURN R</button>
       <button class="btn fire" data-act="fire" aria-label="spray (space or F)">SPRAY<small>💦</small><span class="hint">SPACE</span></button>
     </div>
   </div>
