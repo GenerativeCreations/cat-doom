@@ -47,6 +47,10 @@
   .pad.left { justify-self:start; }
   .pad.right { justify-self:end; grid-template-columns:repeat(2,64px) 96px; }
   .btn { width:64px; height:64px; border:3px solid var(--edge); border-bottom-width:7px; background:#2c1c1f; color:var(--text); font-size:28px; font-weight:bold; font-family:inherit; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; }
+  .btn { position:relative; }
+  .btn .hint { position:absolute; left:0; right:0; bottom:3px; font-size:9px; line-height:1; letter-spacing:0; opacity:.65; font-weight:bold; pointer-events:none; }
+  .btn.fire .hint { bottom:6px; }
+  .btn.pressed .hint, .btn:active .hint { opacity:.9; }
   .btn.pressed, .btn:active { background:var(--hot); color:#000; border-bottom-width:3px; transform:translateY(4px); }
   .btn.fire { width:96px; height:134px; grid-row:1 / span 2; background:#7a1f12; font-size:18px; letter-spacing:1px; flex-direction:column; line-height:1.1; }
   .btn.fire small { font-size:11px; opacity:.85; letter-spacing:0; }
@@ -104,18 +108,18 @@
   <div id="tools" hidden></div>
   <div id="controls">
     <div class="pad left">
-      <button class="btn fwd" data-act="fwd" aria-label="forward">▲</button>
-      <button class="btn sl" data-act="sl" aria-label="strafe left">◀</button>
-      <button class="btn back" data-act="back" aria-label="back">▼</button>
-      <button class="btn sr" data-act="sr" aria-label="strafe right">▶</button>
+      <button class="btn fwd" data-act="fwd" aria-label="forward (W or up arrow)">▲<span class="hint">W ↑</span></button>
+      <button class="btn sl" data-act="sl" aria-label="strafe left (Q)">◀<span class="hint">Q</span></button>
+      <button class="btn back" data-act="back" aria-label="back (S or down arrow)">▼<span class="hint">S ↓</span></button>
+      <button class="btn sr" data-act="sr" aria-label="strafe right (E)">▶<span class="hint">E</span></button>
     </div>
     <div id="center">MOVE ◀ ▲ ▼ ▶<br>TURN ⟲ ⟳ &nbsp; SPRAY<br>drag the view to look</div>
     <div class="pad right">
-      <button class="btn tl" data-act="tl" aria-label="turn left">⟲</button>
-      <button class="btn tr" data-act="tr" aria-label="turn right">⟳</button>
+      <button class="btn tl" data-act="tl" aria-label="turn left (A or left arrow)">⟲<span class="hint">A ←</span></button>
+      <button class="btn tr" data-act="tr" aria-label="turn right (D or right arrow)">⟳<span class="hint">D →</span></button>
       <button class="btn tl2" data-act="tl" aria-label="turn left">TURN L</button>
       <button class="btn tr2" data-act="tr" aria-label="turn right">TURN R</button>
-      <button class="btn fire" data-act="fire" aria-label="spray">SPRAY<small>💦</small></button>
+      <button class="btn fire" data-act="fire" aria-label="spray (space or F)">SPRAY<small>💦</small><span class="hint">SPACE / F</span></button>
     </div>
   </div>
 </div>
