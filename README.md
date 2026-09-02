@@ -5,6 +5,10 @@ Play it at **https://cat-doom.com**. Source is MIT-licensed; every sprite and te
 Doom, but the demons are cats. A browser raycaster with all controls on screen (touch, mouse, keyboard),
 twelve hand-authored levels, a spray bottle, and a toolbelt that grows every level.
 
+## Contributing
+
+Not accepting contributions (see [CONTRIBUTING.md](CONTRIBUTING.md)); bug reports are welcome as issues.
+
 ## Parody notice
 
 CatDoom is a fan-made parody. It is not affiliated with, endorsed by, or connected to id Software, Bethesda
@@ -44,8 +48,7 @@ Edit the newsletter / stream plug on the title screen in `public/promo.js`.
 `server.js` serves only `.html/.js/.css/.png/.ico/.txt` files from `public/`, refuses dotfiles and the
 Cloudflare config files, and sends a strict Content-Security-Policy (no inline scripts, no outbound
 connections). `_headers` sends the same policy on Cloudflare. The game makes no network requests, sets no
-cookies, and stores nothing. Debug hooks on `window.CatDoom.cheat` exist for testing; there is no
-leaderboard, so they affect only your own session.
+cookies, and stores nothing. The public build ships no debug or cheat hooks.
 
 ## Files
 

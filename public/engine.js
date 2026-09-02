@@ -812,11 +812,6 @@ let last = performance.now(), frames = 0, fps = 0, fpsT = 0;
 function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); render(); renderHud(); frames++; fpsT += dt; if (fpsT >= 1) { fps = frames; frames = 0; fpsT = 0; } requestAnimationFrame(loop); }
 window.addEventListener('load', () => { reset(startLevel); requestAnimationFrame(loop); });
 
-window.CatDoom = {
-  registerLevel, LEVELS, CAT_TYPES, LAST_LEVEL,
-  get state() { return G.state; }, get level() { return G.level; }, get levelName() { return G.levelName; }, get cleared() { return G.cleared; }, get exit() { return G.exit; }, get player() { return G.player; }, get cats() { return G.cats; }, get shots() { return G.shots; }, get items() { return G.items; }, get throws() { return G.throws; }, get tools() { return G.tools; }, useTool, TOOLS, get triggers() { return G.triggers; }, get input() { return input; }, get kills() { return G.kills; }, get fps() { return fps; }, get procedural() { return G.procedural; },
-  get shareText() { return shareText(); }, get lastCard() { return G.lastCard; }, get runT() { return G.runT; }, get levelT() { return G.levelT; }, get paused() { return G.paused; }, pause: togglePause, get wailT() { return G.wailT; }, get secrets() { return G.secrets; }, get barrels() { return G.barrels; }, get hasKey() { return G.hasKey; }, get skill() { return G.skill; }, get par() { return G.par; }, levelCard, explodeBarrel, attackCat, SKILLS, PAIN, get speedMul() { return G.speedMul; }, get introT() { return G.introT; }, get shake() { return G.shake; },
-  wall: (x, y) => wallAt(x, y), start, fire,
-  cheat: !DEBUG ? undefined : { get pickups() { return G.pickups; }, tick(dt) { update(dt); render(); renderHud(); }, snapshot() { return cv.toDataURL('image/png'); }, napAll() { for (const c of G.cats) if (c.alive) { c.alive = false; G.kills++; G.totalKills++; } }, warp(n) { if (!G.player) reset(n); else loadLevel(n); }, spawn: spawnCat },
-};
+// The public surface level files need. Everything else is the debug seam below, which the publish script strips from the public build.
+window.CatDoom = { registerLevel, LEVELS, CAT_TYPES, LAST_LEVEL };
 })();
