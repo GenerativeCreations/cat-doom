@@ -695,8 +695,8 @@ function bindButton(b) {
 document.querySelectorAll('.btn').forEach(bindButton);
 // WASD and the arrow keys are interchangeable: W/Up forward, S/Down back, A/Left turn, D/Right turn.
 // Strafe with Q/E, or hold Shift with a turn key. Space / F / Ctrl spray. 1–4 use tools.
-// WASD = the move pad (W/S forward-back, A/D strafe). Arrows = move + turn (Shift+arrow strafes). Q/E also turn. Space / F / Ctrl spray. 1–7 tools.
-const KEYS = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'sl', KeyD: 'sr', ArrowLeft: 'tl', ArrowRight: 'tr', KeyQ: 'tl', KeyE: 'tr', Space: 'fire', ControlLeft: 'fire', ControlRight: 'fire', KeyF: 'fire' };
+// Like 1993: W/S and Up/Down move, A/D and Left/Right TURN (there is no mouse-look, so turning lives on the easy keys). Q/E strafe, or Shift + a turn key. Space / F / Ctrl spray. 1–7 tools.
+const KEYS = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'tl', KeyD: 'tr', ArrowLeft: 'tl', ArrowRight: 'tr', KeyQ: 'sl', KeyE: 'sr', Space: 'fire', ControlLeft: 'fire', ControlRight: 'fire', KeyF: 'fire' };
 const STRAFE_OF = { tl: 'sl', tr: 'sr' }, heldKeys = {}, keyDownAt = {};
 const KEY_BY_KEY = { p: 'KeyP', Escape: 'Escape', w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', q: 'KeyQ', e: 'KeyE', f: 'KeyF', ' ': 'Space', ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight', Enter: 'Enter', '1': 'Digit1', '2': 'Digit2', '3': 'Digit3', '4': 'Digit4', '5': 'Digit5', '6': 'Digit6', '7': 'Digit7' };
 const keyCode = e => e.code || KEY_BY_KEY[e.key] || KEY_BY_KEY[(e.key || '').toLowerCase()] || '';

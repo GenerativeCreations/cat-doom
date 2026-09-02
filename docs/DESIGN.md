@@ -255,3 +255,27 @@ Played through the browser pane with real key/button inputs (pause between decis
 Still open after this pass: water economy on L10–L12 is fine on paper with ≥55% accuracy and the wider cone
 should deliver that, but a full human clear of L10–L12 has not been played; bowls hidden in alcoves
 (L10) are easy to miss.
+
+## 11. The Doom systems (design, 2026-09-02)
+
+Research pass against the 1993 original: CatDoom had the shooting and the atmosphere but none of Doom's
+*interacting* systems. Each one below is re-skinned so it reads as a cat thing, not a demon thing.
+
+| Doom system | CatDoom version | How it plays |
+|---|---|---|
+| Secrets + intermission tally | **Hidey-holes.** `?` = a wall cell that yields when walked into (rendered with the room's wall texture plus a faint claw-scratch as the tell). Behind it, `$` secret floor cells holding a stash (catnip, a bowl, tuna). | First step onto a `$` cell: "SECRET FOUND" + count. End-of-room card grades CATS %, BOWLS %, SECRETS %, TIME vs PAR (`par` seconds in the level file) and a letter grade. Best time and secrets found persist per level and show under the level-select buttons. |
+| Monster infighting | **Cat fights.** Any cat hurt by another cat (a hairball, a scared or bagged cat crashing into it, a litter-box blast started by a cat) turns on the attacker for 8 s: chases and swipes it instead of you. | "CAT FIGHT!" message. Stand behind a pack so a hurler's hairballs land on its friends. Boss summons never fight their boss. |
+| Pain state | **Flinch.** Each spray hit has a per-type pain chance (kitten 90, tabby 70, zoomie 80, void 60, hurler 60, sphynx 50, ghost 50, tuxedo 40, wailer 35, chonk 15, matriarch 8, bastet 5). A flinch stops movement and attacks for 0.35 s and resets the swipe wind-up. | Rapid taps stun-lock kittens; bosses shrug it off. The spray finally *interrupts* the swipe that was about to land. |
+| Sound propagation | **They hear the bottle.** Spray noise travels through open floor (BFS distance ≤ 9 cells, reusing the distance field), not through walls. | Sleeping cats behind a wall stay asleep; sneaking past a room is a real option. |
+| Keys and locked doors | **The collar tag.** `L` = a locked door (wall id 6, drawn with a cat flap and a padlock). `K` = the tag on the floor, guarded. Walking into the door with the tag opens it for good. One per level where used; the validator proves the tag is reachable without the door and that the door matters (exit behind it). | Forces the Romero revisit: clear the room, find the tag in a side room, come back through territory you know. |
+| Skill levels | **KITTEN / CAT / LION** on the title. Kitten: damage ×0.6, bottle 90. Cat: as tuned. Lion: damage ×1.4, cats 15 % faster, no intro grace. | Chosen per run, remembered. |
+| Barrels | **Litter boxes.** `!` = a full litter box: solid, 40 HP. A spray hit or a hairball detonates it: dust cloud, 70 damage to cats within 2.2 tiles, 15 to you, chain-reacts. Cats caught in the dust are dazed 2 s. | Doom's oldest trick: bait a pack past the box, spray the box. |
+
+Not taken from the list: armour, timed power-ups and a weapon ladder. The toolbelt already fills that slot;
+adding a second damage source would dilute the spray-bottle joke.
+
+**Legend additions:** `?` secret wall (passable, counts when passed) · `$` secret floor · `L` locked door ·
+`K` collar tag · `!` litter box. **Level file additions:** `par: <seconds>`.
+
+**Rollout:** engine + validator first (Fable seat), then the twelve level files get secrets, litter boxes,
+par times and (from L3 on, every other level) a tag-and-door, by four workers, then a play pass.
