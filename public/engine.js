@@ -734,7 +734,7 @@ window.addEventListener('load', () => { reset(startLevel); requestAnimationFrame
 window.CatDoom = {
   registerLevel, LEVELS, CAT_TYPES, LAST_LEVEL,
   get state() { return G.state; }, get level() { return G.level; }, get levelName() { return G.levelName; }, get cleared() { return G.cleared; }, get exit() { return G.exit; }, get player() { return G.player; }, get cats() { return G.cats; }, get shots() { return G.shots; }, get items() { return G.items; }, get throws() { return G.throws; }, get tools() { return G.tools; }, useTool, TOOLS, get triggers() { return G.triggers; }, get input() { return input; }, get kills() { return G.kills; }, get fps() { return fps; }, get procedural() { return G.procedural; },
-  get shareText() { return shareText(); }, get lastCard() { return G.lastCard; }, get runT() { return G.runT; }, get levelT() { return G.levelT; }, get paused() { return G.paused; }, pause: togglePause, get shake() { return G.shake; },
+  get shareText() { return shareText(); }, get lastCard() { return G.lastCard; }, get runT() { return G.runT; }, get levelT() { return G.levelT; }, get paused() { return G.paused; }, pause: togglePause, get wailT() { return G.wailT; }, get speedMul() { return G.speedMul; }, get introT() { return G.introT; }, get shake() { return G.shake; },
   wall: (x, y) => wallAt(x, y), start, fire,
   cheat: !DEBUG ? undefined : { get pickups() { return G.pickups; }, tick(dt) { update(dt); render(); renderHud(); }, snapshot() { return cv.toDataURL('image/png'); }, napAll() { for (const c of G.cats) if (c.alive) { c.alive = false; G.kills++; G.totalKills++; } }, warp(n) { if (!G.player) reset(n); else loadLevel(n); }, spawn: spawnCat },
 };
